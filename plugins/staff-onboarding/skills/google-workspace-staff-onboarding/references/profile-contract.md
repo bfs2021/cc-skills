@@ -2,7 +2,7 @@
 
 An organisation's onboarding profile is `onboarding/profile.toml` in its own repository: every value the skill needs that differs between organisations (its variation points). It is tracked, so it holds **roles, seats, paths and command templates only**; who holds which seat lives in the git-ignored roster it points to. A section left out means the steps that use it do not apply. [Example](./example-profile.toml).
 
-Command templates use `{placeholder}` names the skill fills per person: `{seat}`, `{dm_chat}` (the private chat), `{first_name}`, `{name}`, `{alias}`, `{address}`, `{sender_name}`, `{labels}`, `{filters_json}`, `{candidates}`, `{hostname}`, `{pubkey}`, `{local}`, `{forum}`, `{member_json}`, `{flow_json}`, `{run_dir}`, `{commands}`.
+Command templates use `{placeholder}` names the skill fills per person: `{seat}` (the account address), `{name}` (the name the person goes by, as written in messages), `{first_name}` (lowercase, as used in addresses, hostnames and folder names), `{dm_chat}` (the private chat), `{alias}`, `{address}`, `{sender_name}`, `{labels}`, `{filters_json}`, `{candidates}`, `{hostname}`, `{pubkey}`, `{local}`, `{forum}`, `{member_json}`, `{flow_json}`, `{job_id}`, `{text}`, `{lesson}` (one lesson as JSON), `{run_dir}`, `{commands}`. A template is complete as written: it carries any credential wrapper (`vault run …`) its tool needs, and where the tool has a dry run, the template is the dry run and the tool's own spec names its apply flag.
 
 ## Required
 
@@ -19,6 +19,8 @@ Command templates use `{placeholder}` names the skill fills per person: `{seat}`
 | `chat.footer_context`    | Context string for the Claude Code footer of every message                |
 | `chat.languages`         | BCP 47 tags, every message carries each one side by side                  |
 | `lessons.log`            | Path of the lessons log ([contract](./lessons-contract.md))               |
+| `lessons.add`            | Command that validates one lesson and appends it (`{lesson}`)             |
+| `lessons.list`           | Command that prints the log, high-priority lessons first                  |
 | `lessons.check`          | Command that checks the profile and the log (the organisation's own gate) |
 | `lessons.generic_target` | Where generic lessons are proposed: this skill                            |
 | `lessons.org_target`     | Where organisation lessons are proposed: usually the overlay skill        |

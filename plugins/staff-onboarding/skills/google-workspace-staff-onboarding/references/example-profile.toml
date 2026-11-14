@@ -85,5 +85,7 @@ address_pattern = "{first_name}@example.com"
 [lessons]
 log = "onboarding/lessons.ndjson"
 check = "bun scripts/onboarding-profile.ts check"
+add = "bun scripts/onboarding-profile.ts add --json {lesson}"
+list = "bun scripts/onboarding-profile.ts list"
 generic_target = "terrylica/cc-skills: plugins/staff-onboarding/skills/google-workspace-staff-onboarding"
 org_target = ".claude/skills/acme-staff-onboarding/SKILL.md"
