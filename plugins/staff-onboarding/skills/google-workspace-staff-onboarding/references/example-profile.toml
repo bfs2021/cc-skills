@@ -47,6 +47,7 @@ workspace = "forum"
 forum_title = "Acme IT"
 secrets_channel = "one-to-one"
 reply_watch = "watch-replies {forum} --from {first_name} --download-attachments"
+watch_check = "bun scripts/onboarding-profile.ts in-hours"
 watch_hours = { days = ["Mon", "Tue", "Wed", "Thu", "Fri"], start = "09:00", end = "17:00", utc_offset = "-05:00" }   # watchers run only inside these hours
 
 [chat.bot]
@@ -57,7 +58,7 @@ member_dir = ".secrets/onboarding/{first_name}"
 spec = "bun scripts/chat-bot.ts spec"
 run = "bun scripts/chat-bot.ts job start --member {member_json} --flow {flow_json}"
 watch = "bun scripts/chat-bot.ts job watch {job_id}"
-post = "bun scripts/chat-bot.ts post --member {member_json} --text {text}"
+post = "bun scripts/chat-bot.ts post --member {member_json} --text {text} --context \"Acme onboarding · {name}\""
 
 [legacy_mail]
 host = "the previous mail host"

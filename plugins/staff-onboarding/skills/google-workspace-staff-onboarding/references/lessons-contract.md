@@ -21,6 +21,8 @@ The lessons log is how onboarding improves itself from the people being onboarde
 
 Step ids: `find-seat`, `introduce`, `first-signin`, `password-change`, `2sv`, `passkey`, `backup-codes`, `shared-seat`, `shared-drives`, `mail-questions`, `legacy-mail`, `mail-copy`, `labels-filters`, `send-as`, `end-forward`, `contacts`, `remote-support`, `notifications`, `ai-tools`, `github`, `conversation`, `tooling`, `record`. A new step in the skill adds its id here in the same change.
 
+Which id to use: `2sv` is Google's "Don't get locked out" page and its prompts; turning 2-Step Verification on with a passkey is `passkey`.
+
 ## The loop
 
 1. The person gets stuck, or the onboarding ends: the session appends the lesson (status `open`).
