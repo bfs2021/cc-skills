@@ -54,8 +54,10 @@ handle = "@AcmeOnboardingBot"
 vault_scope = "acme-chat-bot"
 flows_dir = "onboarding/flows"
 member_dir = ".secrets/onboarding/{first_name}"
-run = "scripts/onboarding-bot-run.sh {member_json} {flow_json} {run_dir}"
-one_run_per_token = true
+spec = "bun scripts/chat-bot.ts spec"
+run = "bun scripts/chat-bot.ts job start --member {member_json} --flow {flow_json}"
+watch = "bun scripts/chat-bot.ts job watch {job_id}"
+post = "bun scripts/chat-bot.ts post --member {member_json} --text {text}"
 
 [legacy_mail]
 host = "the previous mail host"
