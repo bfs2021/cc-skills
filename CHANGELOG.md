@@ -1,3 +1,12 @@
+# [34.16.0](https://github.com/terrylica/cc-skills/compare/v34.15.1...v34.16.0) (2026-11-15)
+
+
+### Features
+
+* **itp-hooks:** record Cloudflare deploys and hold the turn until the sitemap is updated ([1486eda](https://github.com/terrylica/cc-skills/commit/1486edaf365ad84d962f59529f6a639e7fed6e55))
+
+A PostToolUse hook notices every Cloudflare Workers or Pages deploy command (wrangler deploy, wrangler pages deploy, wrangler versions deploy, a repository's workers_deploy.sh; dry runs excluded), records it with the session id under ~/.local/state/cf-sitemap/, and reminds the agent to update the sitemap of every published link. A new Stop subhook refuses to end the turn while that session's deploy is newer than the last sitemap update, at most three times per deploy, and never for another session's deploy. Each machine names its own update command in ~/.config/cf-sitemap/hook.json; nothing account- or URL-specific lives in this repository. Escape hatch: CF-SITEMAP-OK in the command.
+
 ## [34.15.1](https://github.com/terrylica/cc-skills/compare/v34.15.0...v34.15.1) (2026-11-15)
 
 
