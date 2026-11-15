@@ -123,6 +123,15 @@ Device batteries come from three places, merged by name (`FCMergeBluetoothDevice
 
 The device list is the read that costs `bluetoothd` work: Stats issue #3623 measured about 20 XPC messages a second from a 1 s reader.
 
+**Measured cost (2026-11-15, M3 Max, macOS 26).** Taken the way [brightness-rail.md](./brightness-rail.md) § Cost prescribes: a CPU-time delta (`ps -o time=` sampled twice), here over 60 s windows, with the rail switched on and off in turn and 5 s to settle before each window. Bluetooth was on, nothing was connected, and the battery was held on AC.
+
+| Rail | Window 1 | Window 2 | Mean |
+| --- | --- | --- | --- |
+| On | 2.450 % | 2.350 % | 2.40 % |
+| Off | 2.333 % | 2.133 % | 2.23 % |
+
+The rail adds about 0.17 percentage points. That is the size of the noise between two windows in the same state (0.10 to 0.20 points), but it was higher in both pairs, so it is small rather than zero. Re-measure after any change to the read cadences above.
+
 **Shortcut and tip.** `floating-clock --bluetooth on|off|toggle` posts `<bundle id>.bluetooth.power` (userInfo `state`), and the running clock acts on it whether or not the rail is showing. The Bluetooth permission therefore stays with the clock, whatever runs the command; an unknown state prints the usage and exits 64. The tip is the chord of the hotkey whose command is `floating-clock … --bluetooth toggle`, read from the JSON file named by `PowerRailHotkeyRegistry`: `{"v":1,"hotkeys":[{"id","keys","run":[argv],"apps":[…]}]}`, re-read when its mtime changes. A hotkey daemon that publishes its registrations there makes the tip follow every re-bind. With no file the rail shows no tip.
 
 | default key               | type   | default    | meaning                                                                  |
