@@ -1,3 +1,24 @@
+# [34.17.0](https://github.com/terrylica/cc-skills/compare/v34.16.0...v34.17.0) (2026-11-15)
+
+
+### Bug Fixes
+
+* **statusline-tools:** flag an unsaved JSONL ID and name the fork parent ([1d7bb2a](https://github.com/terrylica/cc-skills/commit/1d7bb2a9be062cf8180cb978ee2bdca4a5d09b4d))
+
+Claude Code writes a session's transcript only when its first new entry is appended. A `--resume <id> --fork-session` restore that nobody types into (an IDE reopening a terminal tab) therefore shows a new id on the statusline whose transcript never exists, and `claude --resume <that id>` later answers "No conversation found with session ID". Measured: a restored fork sat five hours at an empty prompt with its cost unchanged and left no transcript; a probe fork with no prompt reproduced it.
+
+While the transcript file named by the statusline input's `transcript_path` is missing, the session line now adds "(not saved until the first message)". For a `--fork-session` session it also adds "; resume &lt;parent>", the parent id read from the `--resume`/`-r` argument of the nearest ancestor process that carries `--fork-session` (at most six `ps` hops, only while the file is missing; once it exists the cost is one test).
+
+Three bats cases cover a fork (all three argument spellings), a non-fork and a saved fork; removing the parent lookup or the missing-file test each makes a case fail.
+
+
+
+### Features
+
+* **floating-clock:** power rail for battery status and Bluetooth ([a5768ba](https://github.com/terrylica/cc-skills/commit/a5768badba747a25047d52b5dfb87f15ac5d662e)), closes [exelban/stats#3392](https://github.com/exelban/stats/issues/3392)
+
+A new rail, directly below the network rail, puts the Mac's battery and Bluetooth on one 20 pt line: battery on the left, Bluetooth power, the shortcut tip and each device's battery on the right. Every battery field beyond the percentage and its state glyph can be shown or hidden from the rail's right-click "Show on Bar"; whatever the bar hides stays in the tooltip and the Details menu.
+
 # [34.16.0](https://github.com/terrylica/cc-skills/compare/v34.15.1...v34.16.0) (2026-11-15)
 
 
