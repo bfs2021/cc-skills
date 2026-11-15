@@ -236,6 +236,17 @@
             "description": "Reminds when a Bash command wrote net-new hard-wrapped prose into a Markdown file; repair with gfm-unwrap.ts. Escape: MD-HARD-WRAP-OK as an HTML comment in the file."
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun \"${CLAUDE_PLUGIN_ROOT}\"/hooks/posttooluse-cloudflare-deploy-sitemap-reminder.ts",
+            "timeout": 5,
+            "description": "After a Cloudflare Workers/Pages deploy, records it and reminds to update the sitemap of every Workers link (operator, 2026-11-15)."
+          }
+        ]
       }
     ],
     "Stop": [
@@ -245,7 +256,7 @@
             "type": "command",
             "command": "bun \"${CLAUDE_PLUGIN_ROOT}\"/hooks/stop-orchestrator.ts",
             "timeout": 65,
-            "description": "Runs the four Stop hooks in sequence (subprocess-cleanup, error-summary, ty-check, markdown-lint), each time-boxed and crash-isolated."
+            "description": "Runs the five Stop hooks in sequence (subprocess-cleanup, error-summary, ty-check, markdown-lint, cf-sitemap-pending), each time-boxed and crash-isolated."
           }
         ]
       }

@@ -79,6 +79,7 @@ const SUBHOOKS: SubHookConfig[] = [
   { name: "error-summary",      script: "stop-hook-error-summary.ts",          timeoutMs: 5000 },
   { name: "ty-check",            script: "stop-ty-project-check.ts",            timeoutMs: 15000 },
   { name: "markdown-lint",      script: "stop-markdown-lint.ts",                timeoutMs: 15000 },
+  { name: "cf-sitemap-pending", script: "stop-cloudflare-sitemap-pending.ts",   timeoutMs: 5000 },
 ];
 
 interface SubHookResult {
