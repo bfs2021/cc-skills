@@ -1,3 +1,12 @@
+## [34.15.1](https://github.com/terrylica/cc-skills/compare/v34.15.0...v34.15.1) (2026-11-15)
+
+
+### Bug Fixes
+
+* **hooks:** quote the plugin root so hooks run from a path with a space ([8fe0b7f](https://github.com/terrylica/cc-skills/commit/8fe0b7f6ec7d4521a8d321f9d6a83f1e917ce0dd)), closes [#tools](https://github.com/terrylica/cc-skills/issues/tools)
+
+Claude Code replaces ${CLAUDE_PLUGIN_ROOT} in a hook command with the plugin's install path and runs the result with /bin/sh -c, unquoted. Orca starts Claude sessions with CLAUDE_CONFIG_DIR under ~/Library/Application Support/, and a `claude plugin update` run there records an install path with a space; every unquoted hook then fails with "/bin/sh: .../Library/Application: Permission denied" (exit 126). It was measured on another marketplace's hooks on 2026-11-14.
+
 # [34.15.0](https://github.com/terrylica/cc-skills/compare/v34.14.1...v34.15.0) (2026-11-14)
 
 
