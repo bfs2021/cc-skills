@@ -239,16 +239,29 @@ static os_log_t FCPwrLog(void) {
     }
 }
 
+// IOBluetooth delivers these on its own thread, not the main one. Everything they lead to (reads,
+// render, the overlay width consensus, -setFrame:) is AppKit or main-confined, and AppKit traps when
+// a window is touched off the main thread ("Must only be used from the main thread", EXC_BREAKPOINT):
+// on 2026-11-15 the clock crashed at launch whenever a device was connected, because registering for
+// connect notifications reports every device already connected straight away. So hop first.
 - (void)btConnected:(IOBluetoothUserNotification *)note device:(IOBluetoothDevice *)dev {
-    [dev registerForDisconnectNotification:self selector:@selector(btDisconnected:device:)];
-    _devicesDirty = YES;
-    [self refreshNow];
+    __weak typeof(self) weak = self;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        typeof(self) me = weak; if (!me) return;
+        [dev registerForDisconnectNotification:me selector:@selector(btDisconnected:device:)];
+        me->_devicesDirty = YES;
+        [me refreshNow];
+    });
 }
 
 - (void)btDisconnected:(IOBluetoothUserNotification *)note device:(IOBluetoothDevice *)dev {
-    [note unregister];
-    _devicesDirty = YES;
-    [self refreshNow];
+    __weak typeof(self) weak = self;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        typeof(self) me = weak; if (!me) return;
+        [note unregister];
+        me->_devicesDirty = YES;
+        [me refreshNow];
+    });
 }
 
 - (void)readHint {
@@ -297,6 +310,12 @@ static os_log_t FCPwrLog(void) {
 }
 
 - (void)refreshNow {
+    // Main thread only (see -btConnected:device:); a caller on another thread is re-dispatched, not run.
+    if (![NSThread isMainThread]) {
+        __weak typeof(self) weak = self;
+        dispatch_async(dispatch_get_main_queue(), ^{ [weak refreshNow]; });
+        return;
+    }
     if (!_showing) return;
     [self readAll];
     [self render];

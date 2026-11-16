@@ -190,7 +190,7 @@ static NSString *FCPartKey(NSString *part) {
     return @"";
 }
 
-// "Alex’s AirPods Pro Case" -> "Alex’s AirPods Pro": the device a lone part belongs to.
+// "Owner’s AirPods Pro Case" -> "Owner’s AirPods Pro": the device a lone part belongs to.
 static NSString *FCStripPartSuffix(NSString *name) {
     for (NSString *suffix in @[ @" Case", @" Left", @" Right" ]) {
         if ([name hasSuffix:suffix]) return [name substringToIndex:name.length - suffix.length];
@@ -198,14 +198,28 @@ static NSString *FCStripPartSuffix(NSString *name) {
     return name;
 }
 
+static NSString *FCOwnerless(NSString *name);
+
 NSString *FCShortDeviceName(NSString *name) {
-    NSString *s = name ?: @"";
-    NSRegularExpression *owner = [NSRegularExpression regularExpressionWithPattern:@"^[^’']{1,40}[’']s\\s+" options:0 error:nil];
-    NSTextCheckingResult *m = [owner firstMatchInString:s options:0 range:NSMakeRange(0, s.length)];
-    if (m && m.range.length < s.length) s = [s substringFromIndex:NSMaxRange(m.range)];
+    NSString *s = FCOwnerless(name);
     if ([s hasPrefix:@"Magic "] && s.length > 6) s = [s substringFromIndex:6];
     if (s.length > 16) s = [[s substringToIndex:15] stringByAppendingString:@"…"];
     return s;
+}
+
+// "Owner’s AirPods Pro" -> "AirPods Pro": the same pair can be named with or without its owner by
+// different sources (measured 2026-11-15: IOBluetooth said "AirPods Pro", the accessory power source
+// "Owner’s AirPods Pro" for the same buds).
+static NSString *FCOwnerless(NSString *name) {
+    NSString *s = name ?: @"";
+    NSRegularExpression *owner = [NSRegularExpression regularExpressionWithPattern:@"^[^’']{1,40}[’']s\\s+" options:0 error:nil];
+    NSTextCheckingResult *m = [owner firstMatchInString:s options:0 range:NSMakeRange(0, s.length)];
+    return (m && m.range.length < s.length) ? [s substringFromIndex:NSMaxRange(m.range)] : s;
+}
+
+static BOOL FCNameStartsWith(NSString *name, NSString *prefix) {
+    return prefix.length && name.length >= prefix.length
+        && [name compare:prefix options:NSCaseInsensitiveSearch range:NSMakeRange(0, prefix.length)] == NSOrderedSame;
 }
 
 NSArray<FCBTDevice *> *FCMergeBluetoothDevices(NSArray<NSArray *> *paired, NSArray<FCAccessoryPart *> *parts,
@@ -220,18 +234,33 @@ NSArray<FCBTDevice *> *FCMergeBluetoothDevices(NSArray<NSArray *> *paired, NSArr
         d.levels = @{};
         [devices addObject:d];
     }
-    // Longest names first, so "AirPods Pro" never claims the parts of "AirPods Pro 2".
-    NSArray *byLength = [devices sortedArrayUsingComparator:^NSComparisonResult(FCBTDevice *a, FCBTDevice *b) {
-        return a.name.length > b.name.length ? NSOrderedAscending : (a.name.length < b.name.length ? NSOrderedDescending : NSOrderedSame);
+    // Name candidates: longest name first (so "AirPods Pro" never claims the parts of "AirPods Pro 2"),
+    // and among equal names the connected pairing first (two pairings can share a name).
+    NSArray *byName = [devices sortedArrayUsingComparator:^NSComparisonResult(FCBTDevice *a, FCBTDevice *b) {
+        NSUInteger la = FCOwnerless(a.name).length, lb = FCOwnerless(b.name).length;
+        if (la != lb) return la > lb ? NSOrderedAscending : NSOrderedDescending;
+        if (a.connected != b.connected) return a.connected ? NSOrderedAscending : NSOrderedDescending;
+        return NSOrderedSame;
     }];
+    FCBTDevice *(^byAddress)(NSString *) = ^FCBTDevice *(NSString *group) {
+        for (FCBTDevice *d in devices) if (d.address && [d.address caseInsensitiveCompare:group] == NSOrderedSame) return d;
+        return nil;
+    };
+    // Parts keyed by a device address (IOBluetooth's own readings of a connected device) go first: they
+    // are exact, and a device that has them takes name-matched parts only to fill what they lack.
+    NSArray *ordered = [parts sortedArrayUsingComparator:^NSComparisonResult(FCAccessoryPart *a, FCAccessoryPart *b) {
+        BOOL ka = byAddress(a.group) != nil, kb = byAddress(b.group) != nil;
+        return ka == kb ? NSOrderedSame : (ka ? NSOrderedAscending : NSOrderedDescending);
+    }];
+    NSMutableSet<FCBTDevice *> *exact = [NSMutableSet set];
     NSMutableDictionary<NSString *, FCBTDevice *> *byGroup = [NSMutableDictionary dictionary];
-    for (FCAccessoryPart *part in parts) {
+    for (FCAccessoryPart *part in ordered) {
         FCBTDevice *owner = byGroup[part.group];
+        BOOL keyed = NO;
+        if (!owner) { owner = byAddress(part.group); keyed = owner != nil; }
         if (!owner) {
-            for (FCBTDevice *d in byLength) {
-                if ([part.name compare:d.name options:NSCaseInsensitiveSearch range:NSMakeRange(0, MIN(d.name.length, part.name.length))] == NSOrderedSame
-                    && part.name.length >= d.name.length) { owner = d; break; }
-            }
+            NSString *pn = FCOwnerless(part.name);
+            for (FCBTDevice *d in byName) if (FCNameStartsWith(pn, FCOwnerless(d.name))) { owner = d; break; }
         }
         if (!owner) {   // a battery group no pairing explains: show it, with nothing to click
             owner = [FCBTDevice new];
@@ -240,8 +269,19 @@ NSArray<FCBTDevice *> *FCMergeBluetoothDevices(NSArray<NSArray *> *paired, NSArr
             [devices addObject:owner];
         }
         byGroup[part.group] = owner;
+        NSString *key = FCPartKey(part.part);
         NSMutableDictionary *lv = [owner.levels mutableCopy];
-        lv[FCPartKey(part.part)] = @(part.percent);
+        if (keyed) {
+            [exact addObject:owner];
+            lv[key] = @(part.percent);
+        } else if ([exact containsObject:owner]) {
+            // Fill only what the exact readings lack (the case), and never a combined figure beside
+            // left and right ones it could contradict.
+            BOOL hasBuds = lv[@"L"] || lv[@"R"];
+            if (!lv[key] && !(key.length == 0 && hasBuds)) lv[key] = @(part.percent);
+        } else {
+            lv[key] = @(part.percent);
+        }
         owner.levels = lv;
         if (part.charging) owner.charging = YES;
     }

@@ -86,7 +86,7 @@ NSString *FCSignedWattsLabel(double watts);
 // One accessory power source part (pmset -g accps): a whole device, or one part of a group such as
 // the AirPods' left bud, right bud and case.
 @interface FCAccessoryPart : NSObject
-@property (nonatomic, copy) NSString *name;       // "Alex’s AirPods Pro Case"
+@property (nonatomic, copy) NSString *name;       // "Owner’s AirPods Pro Case"
 @property (nonatomic, copy) NSString *group;      // Group Identifier, or the name when there is none
 @property (nonatomic, copy) NSString *part;       // "Left" "Right" "Case" "Combined" "Single" or ""
 @property (nonatomic) NSInteger percent;
@@ -106,14 +106,14 @@ NSString *FCSignedWattsLabel(double watts);
 @property (nonatomic) BOOL charging;
 @end
 
-// "Alex’s AirPods Pro" -> "AirPods Pro"; "Alex’s Magic Trackpad" -> "Trackpad". Drops an owner's
+// "Owner’s AirPods Pro" -> "AirPods Pro"; "Owner’s Magic Trackpad" -> "Trackpad". Drops an owner's
 // possessive prefix and a leading "Magic ", then caps the length at 16 with an ellipsis.
 NSString *FCShortDeviceName(NSString *name);
 
 // Merges what the readers found into the rail's device list:
 //   · `paired`: every paired device as @[name, address, @(connected to this Mac)];
 //   · `parts`: accessory battery parts; a group belongs to the paired device whose name its part's
-//     name starts with ("Alex’s AirPods Pro Case" belongs to "Alex’s AirPods Pro");
+//     name starts with ("Owner’s AirPods Pro Case" belongs to "Owner’s AirPods Pro");
 //   · `hidLevels`: name -> percent from the HID battery service (Magic keyboard, mouse, trackpad).
 // Shown: every connected device, plus a paired device that is not connected but reports a battery
 // (an AirPods case seen over Bluetooth LE); a battery group matching no paired device is kept too,
