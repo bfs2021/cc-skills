@@ -1,3 +1,23 @@
+## [34.17.1](https://github.com/terrylica/cc-skills/compare/v34.17.0...v34.17.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* **floating-clock:** power rail crash on BT connect; AirPods twice ([c714266](https://github.com/terrylica/cc-skills/commit/c7142669edd2b434940f0dfd70ef4d98cfc6e921))
+
+Two bugs in the power rail released in 34.17.0, both found live.
+
+The clock crashed (EXC_BREAKPOINT, "Must only be used from the main thread") whenever a Bluetooth device connected while the rail was on, and at every launch while one was connected. Registering for connect notifications reports each device already connected at once. IOBluetooth delivers those notifications on its own thread, and the handler went straight into render, the overlay width consensus and -[NSWindow setFrame:]. All three crash reports of 2026-11-15 show that stack. Both connect handlers now hop to the main queue first, and refreshNow re-dispatches itself to main if called from anywhere else.
+
+The AirPods showed twice ("AirPods Pro L34 R28 · AirPods Pro L34 R28") on a Mac with two pairings named "AirPods Pro". The merge matched battery parts by name only, so the connected pair's own IOBluetooth readings landed on whichever same-named pairing came first. The accessory sources added a second entry under an owner-prefixed name for the same buds. The merge now:
+- attaches IOBluetooth's readings by device address first;
+- matches accessory parts by name with the owner prefix ignored, preferring the connected pairing among same-named ones;
+- lets a device with exact readings take only parts it lacks (the case), never a combined figure beside left and right ones.
+
+The examples in the model's comments and tests now use "Owner’s" as the placeholder owner.
+
+A test built from the live data fails on the old merge (two devices, wrong levels) and passes now; 156 tests pass. Verified on a Mac with AirPods Pro connected: no crash across relaunches, and the rail reads "AirPods Pro L33 R27" once.
+
 # [34.17.0](https://github.com/terrylica/cc-skills/compare/v34.16.0...v34.17.0) (2026-11-15)
 
 
