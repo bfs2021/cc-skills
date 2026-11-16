@@ -177,6 +177,18 @@ describe("transcripts", () => {
     expect(tags.toSorted()).toEqual(["[A]", "[C]", "[D]"]);
     expect(stats.badLines).toBe(1);
   });
+
+  test("a corrupt .jsonl.br is counted unreadable and the scan goes on", async () => {
+    const dir = join(tmp, "corrupt", "-x");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "bad.jsonl.br"), Buffer.from("not brotli at all \u0000\u0001"));
+    writeFileSync(join(dir, "good.jsonl"), JSON.stringify(deny("[OK]")));
+    const stats: ScanStats = { files: 0, lines: 0, parsed: 0, badLines: 0, unreadable: 0 };
+    const tags: string[] = [];
+    for (const f of listTranscriptFiles(join(tmp, "corrupt"), 0)) await scanTranscript(f, 0, Date.parse("2027-01-01"), (e) => tags.push(e.tag ?? ""), stats);
+    expect(stats.unreadable).toBe(1);
+    expect(tags).toEqual(["[OK]"]);
+  });
 });
 
 describe("aggregate", () => {
