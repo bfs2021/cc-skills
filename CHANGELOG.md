@@ -1,3 +1,17 @@
+## [34.19.1](https://github.com/terrylica/cc-skills/compare/v34.19.0...v34.19.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* **itp-hooks:** hook-census ids never carry prompt or message text ([6f8f257](https://github.com/terrylica/cc-skills/commit/6f8f257f5d187fd1ea0b74af262877ce2c1f0020))
+
+Claude Code's hook `command` field holds a prompt hook's prompt (with the user's words substituted in) or a configured statusMessage, not only a command. 34.19.0 took the first word of it as the hook id, so the first 30-day report put prompt words, an address and a host name into timing.json and REPORT.md.
+
+- An id is now a script's file name, an executable found on PATH under exactly that spelling, or inline:&lt;hash>. Stop entries with promptText are timed under one id, prompt-hook.
+- The inventory records each handler's statusMessage id and the scan counts those records under the handler's script.
+- Untagged messages keep only their leading plain words.
+- The timing summary computed stats inside a sort comparator and copied the per-event array once per tool call: 30 days now take 24 s and about 650 MB instead of 41 s and 1.8 GB. New --gc-every flag.
+
 # [34.19.0](https://github.com/terrylica/cc-skills/compare/v34.18.2...v34.19.0) (2026-11-16)
 
 
