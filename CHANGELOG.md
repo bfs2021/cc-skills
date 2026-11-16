@@ -1,3 +1,19 @@
+## [34.17.2](https://github.com/terrylica/cc-skills/compare/v34.17.1...v34.17.2) (2026-11-16)
+
+
+### Bug Fixes
+
+* **floating-clock:** meter a BT mic held by hosted voice processing ([b402e8a](https://github.com/terrylica/cc-skills/commit/b402e8a8a002bff6fd485368db935ba173b310f7))
+
+The level rail meters a Bluetooth input only while someone else already records it, so the clock never forces a headset into call mode itself. "Someone else" was read from the HAL's per-process objects alone. On macOS 26 a recorder can use Apple's hosted voice processing, which runs the device's IO inside coreaudiod. In coreaudiod's log on 2026-11-15, a dictation app recording AirPods showed `Start_ActivateDSP`, "semantics = airpods noise suppression studio" and an IO context on the AirPods input, while no process was listed as recording them. The meter stayed dark.
+
+- The meter also joins when the input device is running somewhere with nobody listed. This holds only for an input-only device (input streams, no output streams), so playback can never trigger it; AirPods expose input and output as separate devices.
+- While joined, our own IOProc keeps the device running, so every 5 s the clock stops its IOProc, waits 300 ms and reads the flag again: still running means someone else holds it, so it rejoins; otherwise it stays off.
+- A hosted join is capped at 10 minutes, then off for 3 s whatever the flag says, so a lagging flag can never latch call mode on.
+- A rebind clears the hosted state.
+
+Verified live with AirPods: two dictations of about 20 s each. The meter read speech at 0.15-0.31 RMS through both and stopped within a second of each recorder; the in-use flag read 0 right after both stops. Those two runs joined through the listed path; the hosted path is the fallback for the unlisted case and is bounded as above. 156 tests pass; the audio layer itself is outside the unit-test link.
+
 ## [34.17.1](https://github.com/terrylica/cc-skills/compare/v34.17.0...v34.17.1) (2026-11-16)
 
 
