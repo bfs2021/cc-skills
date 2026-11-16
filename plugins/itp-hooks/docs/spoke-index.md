@@ -15,6 +15,7 @@ Each spoke is the SSoT for its own subject. The hub carries only the hook invent
 | [stop-hooks.md](./stop-hooks.md)                                                   | Stop-hook output: where each event's output goes and how summaries are routed                       |
 | [plan-mode-detection.md](./plan-mode-detection.md)                                 | Plan-mode detection signals + which hooks honor them                                                |
 | [read-only-command-detection.md](./read-only-command-detection.md)                 | Read-only command detection (+ SSH remote-bypass semantics)                                         |
+| [hook-census.md](./hook-census.md) | Inventory, outcomes and timing of every hook a session loads; the sub-hook timing window; standing-rules check |
 
 ## Guards — safety and destructive-action prevention
 

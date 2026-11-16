@@ -35,6 +35,7 @@ import {
   trackHookError,
   type PreToolUseInput,
 } from "./pretooluse-helpers.ts";
+import { recordSubhookTiming, type SubhookVerdict } from "./lib/orchestrator-subhook-timing.ts";
 import { main as reviewRoundGate } from "./pretooluse-review-round-gate.ts";
 import { main as reviewQuotaLimiter } from "./pretooluse-review-quota-limiter.ts";
 import { main as processStormGuard } from "./pretooluse-process-storm-guard.mjs";
@@ -158,6 +159,20 @@ async function settle(entry: BashGuardEntry, input: PreToolUseInput): Promise<Gu
   }
 }
 
+/** One word for what a guard returned, for the payload-free timing record (lib/orchestrator-subhook-timing.ts). */
+function guardOutcomeVerdict(outcome: GuardOutcome): SubhookVerdict {
+  if (outcome.kind === "timeout") return "timeout";
+  if (outcome.kind !== "ran") return "error";
+  let verdict: SubhookVerdict = "allow";
+  for (const response of outcome.responses) {
+    const hso = (response as { hookSpecificOutput?: HookSpecificOutput }).hookSpecificOutput ?? {};
+    if (hso.permissionDecision === "deny") return "deny";
+    if (hso.permissionDecision === "ask") verdict = "ask";
+    else if (hso.additionalContext && verdict === "allow") verdict = "context";
+  }
+  return verdict;
+}
+
 /** Run every guard against one input and fold their responses into a single decision. */
 export async function runBashGuards(
   input: PreToolUseInput,
@@ -172,7 +187,20 @@ export async function runBashGuards(
       result.skipped.push(entry.name);
       continue;
     }
+    const startedMs = performance.now();
     const outcome = await runOne(entry, input, Math.min(entry.timeoutMs, remaining));
+    recordSubhookTiming({
+      orchestrator: "pretooluse-bash-guard-orchestrator",
+      event: "PreToolUse",
+      subhook: entry.name,
+      toolName: input.tool_name,
+      toolUseId: input.tool_use_id,
+      sessionId: input.session_id,
+      elapsedMs: performance.now() - startedMs,
+      verdict: guardOutcomeVerdict(outcome),
+      timedOut: outcome.kind === "timeout",
+      errored: outcome.kind === "error",
+    });
     if (outcome.kind !== "ran") {
       const why = outcome.kind === "timeout" ? "timed out" : `threw: ${outcome.message}`;
       process.stderr.write(`${LOG_PREFIX} ${entry.name} ${why}; skipped (fail-open)\n`);
