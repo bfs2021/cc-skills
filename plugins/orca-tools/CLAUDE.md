@@ -40,6 +40,8 @@ The script was verified on 2026-10-13:
 
 The `--environment` and `--host` paths follow Orca's documented flags but were not exercised end to end; no runtimes were paired at the time.
 
+**The Setup tab close (2026-11-16, el02, Ubuntu, Orca 1.4.255 `.deb`, bash 5.3).** Two create/remove cycles in a real repository whose `orca.yaml` has a setup script and whose Orca policy is `run-by-default`. The first, with the earlier `terminal wait --for exit` design, showed that the Setup tab is an interactive shell that stays open after the script (`setup: unknown`, `setup_tabs: 1`, the tab still `running` with `__ORCA_SETUP_COMPLETE__:<id>:0` in its output) and that `worktree create` returns no setup receipt. The second, with the marker design: `setup: succeeded`, `setup_exit: 0`, `setup_tab: closed`, one terminal left (the agent's); `remove` left no worktree or branch. The same run showed the prompt's title in the stream only without its spaces, which the title check now allows for.
+
 ### session-closeout (2026-10-14)
 
 | Platform                                                                                   | What ran                                                                                                                                                                                                                                                                                                                                                                                                          |
