@@ -20,7 +20,7 @@ import { delimiter, join } from "node:path";
 import { parseArgs } from "node:util";
 import { hookCensusDir } from "../hooks/lib/orchestrator-subhook-timing.ts";
 import { OutcomeAccumulator, readDebugLogs, readSubhookTimingFiles, TimingAccumulator } from "./hook-census/aggregate.ts";
-import { buildInventory } from "./hook-census/inventory.ts";
+import { buildInventory, statusAliases } from "./hook-census/inventory.ts";
 import { renderLabels, renderReport } from "./hook-census/report.ts";
 import { boldBulletsInSection, checkRules, headingsInSection } from "./hook-census/rules.ts";
 import { listTranscriptFiles, type ScanStats, scanTranscript } from "./hook-census/transcripts.ts";
@@ -42,6 +42,7 @@ const FLAGS = {
   "bullet-section": { type: "string", help: "## section holding the bullet rules (default: Rules)" },
   "marker-registry": { type: "string", help: "escape-hatch marker registry (default: this plugin's hooks/lib/escape-hatch-marker-registry-iter111.ts)" },
   samples: { type: "string", help: "denies sampled per guard for labelling (default: 10)" },
+  "gc-every": { type: "string", help: "force a garbage collection after this many transcripts, bounding peak memory (default: 50)" },
   top: { type: "string", help: "rows per table in REPORT.md (default: 30)" },
   out: { type: "string", help: "report output directory (default: <census dir>/<today>)" },
   "until-date": { type: "string", help: "window: close date (ISO)" },
@@ -54,8 +55,8 @@ const SPEC = {
   commands: {
     spec: "this JSON",
     inventory: ["config-root", "project", "plugin-dir"],
-    outcomes: ["projects-dir", "since", "until", "samples", "config-root"],
-    timing: ["projects-dir", "since", "until", "census-dir", "debug-dir", "config-root"],
+    outcomes: ["projects-dir", "since", "until", "samples", "config-root", "gc-every"],
+    timing: ["projects-dir", "since", "until", "census-dir", "debug-dir", "config-root", "gc-every"],
     rules: ["rules", "hub-file", "hub-section", "exclude-heading", "bullet-file", "bullet-section", "marker-registry", "config-root", "project", "plugin-dir"],
     report: ["all of the above", "out", "top"],
     window: ["until-date", "close", "census-dir"],
@@ -89,6 +90,9 @@ function inventory() {
 }
 
 async function scan(withOutcomes: boolean, withTiming: boolean) {
+  const gcEvery = Number(one("gc-every") ?? 50);
+  if (!Number.isInteger(gcEvery) || gcEvery < 1) throw new Error("--gc-every must be a positive integer");
+  const aliases = statusAliases(inventory());
   const outcomes = new OutcomeAccumulator(Number(one("samples") ?? 10));
   const timing = new TimingAccumulator();
   const stats: ScanStats = { files: 0, lines: 0, parsed: 0, badLines: 0, unreadable: 0 };
@@ -98,11 +102,14 @@ async function scan(withOutcomes: boolean, withTiming: boolean) {
       sinceMs,
       untilMs,
       (e) => {
+        if (e.hookId) e.hookId = aliases.get(e.hookId) ?? e.hookId;
         if (withOutcomes) outcomes.add(e);
         if (withTiming) timing.addEvent(e);
       },
       stats,
     );
+    // Parsing leaves most of each transcript as garbage; collecting every 50 files took a 30-day peak from 780 to 650 MB.
+    if (stats.files % gcEvery === 0) Bun.gc(true);
   }
   const notes: string[] = [];
   if (withTiming) {

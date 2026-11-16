@@ -166,16 +166,18 @@ export class TimingAccumulator {
   }
 
   result(window: Timing["window"], notes: string[]): Timing {
-    const perHook: Timing["perHook"] = {};
-    for (const [k, v] of [...this.hook.entries()].toSorted((a, b) => stat(b[1].ms).p95 - stat(a[1].ms).p95)) perHook[k] = { event: v.event, ...stat(v.ms) };
-    const perSubhook: Timing["perSubhook"] = {};
-    for (const [k, v] of [...this.sub.entries()].toSorted((a, b) => stat(b[1].ms).p95 - stat(a[1].ms).p95)) {
-      perSubhook[k] = { orchestrator: v.orchestrator, verdicts: v.verdicts, ...stat(v.ms) };
-    }
+    // Each stat sorts a copy of its samples, so compute it once per row and sort the rows by the result.
+    const byP95 = <T extends { p95: number }>(rows: [string, T][]) => rows.toSorted((a, b) => b[1].p95 - a[1].p95);
+    const perHook: Timing["perHook"] = Object.fromEntries(byP95([...this.hook].map(([k, v]) => [k, { event: v.event, ...stat(v.ms) }])));
+    const perSubhook: Timing["perSubhook"] = Object.fromEntries(
+      byP95([...this.sub].map(([k, v]) => [k, { orchestrator: v.orchestrator, verdicts: v.verdicts, ...stat(v.ms) }])),
+    );
     const byEvent = new Map<string, number[]>();
     const bySession = new Map<string, number>();
     for (const c of this.call.values()) {
-      byEvent.set(c.event, [...(byEvent.get(c.event) ?? []), c.max]);
+      const values = byEvent.get(c.event);
+      if (values) values.push(c.max);
+      else byEvent.set(c.event, [c.max]);
       if (c.session) bySession.set(c.session, (bySession.get(c.session) ?? 0) + c.max);
     }
     const perEventCall: Timing["perEventCall"] = {};

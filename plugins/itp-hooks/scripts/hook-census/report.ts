@@ -21,7 +21,7 @@ export function renderReport(r: ReportInput): string {
   const inv = r.inventory;
   L.push(`# Hook census, ${r.generated.slice(0, 10)}`, "");
   L.push(
-    `Window ${r.outcomes.window.since.slice(0, 10)} to ${r.outcomes.window.until.slice(0, 10)}. Scanned ${r.run.files} transcript files (${r.run.lines} lines) in ${Math.round(r.run.wallMs / 1000)} s, peak RSS ${r.run.maxRssMb} MB. Every figure is a tag, id, count or duration; no command, file content or prompt text is kept.`,
+    `Window ${r.outcomes.window.since.slice(0, 10)} to ${r.outcomes.window.until.slice(0, 10)}. Scanned ${r.run.files} transcript files (${r.run.lines} lines) in ${Math.round(r.run.wallMs / 1000)} s, peak RSS ${r.run.maxRssMb} MB as the process reads it (\`/usr/bin/time -l\` reports more). Every figure is a tag, id, count or duration; no command, file content or prompt text is kept.`,
     "",
   );
 

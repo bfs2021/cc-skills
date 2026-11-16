@@ -38,7 +38,10 @@ export interface CensusEvent {
 }
 
 const TAG_MAX = 80;
-const LINE_HINTS = ["hook_", "hook error", '"source":"hook"', "hook:", "stop_hook_summary"];
+const LINE_HINTS = ['"type":"hook_', '"source":"hook"', '"reasonCode":"hook:', '"subtype":"stop_hook_summary"'];
+
+/** The id every prompt hook is timed under: its prompt is payload, and the inventory never lists one by text. */
+export const PROMPT_HOOK_ID = "prompt-hook";
 
 /** The guard tag at the head of a hook message: `[TAG]`, a sub-hook name, or a script name; never the text after it. */
 export function extractTags(text: string): string[] {
@@ -53,14 +56,15 @@ export function extractTags(text: string): string[] {
     if (/[/\s]/.test(inner) && /\.(sh|ts|mjs|js|py)\b/.test(inner)) return [hookIdFromCommand(inner)];
     return [`[${inner.slice(0, TAG_MAX)}]`];
   }
-  const words = head
-    .split(/\s+/)
-    .slice(0, 4)
-    .join(" ")
-    .replace(/[^\w :.-]/g, "")
-    .replace(/\d+/g, "N")
-    .trim();
-  return [`untagged:${words.slice(0, 40)}`];
+  // Leading plain words only: the first word holding anything else (a path, an address, a quote) ends the tag,
+  // because what follows is often the guard echoing the command it refused.
+  const words: string[] = [];
+  for (const w of head.replace(/^[^A-Za-z0-9]+/, "").split(/\s+/).slice(0, 4)) {
+    if (/^\d+[:,.]?$/.test(w)) words.push(w.replace(/\d+/, "N"));
+    else if (/^[A-Za-z][A-Za-z-]*[:,.]?$/.test(w)) words.push(w);
+    else break;
+  }
+  return [`untagged:${words.join(" ").slice(0, 40)}`];
 }
 
 /** "[name] timed out after Nms" lines inside hook output: orchestrator sub-hook timeouts. */
@@ -107,7 +111,9 @@ export function classifyRecord(rec: Rec, file?: string): CensusEvent[] {
     for (const info of Array.isArray(rec.hookInfos) ? (rec.hookInfos as Rec[]) : []) {
       const cmd = str(info.command);
       const ms = num(info.durationMs);
-      if (cmd && ms !== undefined) out.push({ ...base, kind: "duration", event: "Stop", hookId: hookIdFromCommand(cmd), ms, toolUseId: str(rec.toolUseID) });
+      // A prompt hook's entry carries promptText, and its command holds the prompt with the user's words in it.
+      const hookId = "promptText" in info ? PROMPT_HOOK_ID : cmd ? hookIdFromCommand(cmd) : undefined;
+      if (hookId && ms !== undefined) out.push({ ...base, kind: "duration", event: "Stop", hookId, ms, toolUseId: str(rec.toolUseID) });
     }
     return out;
   }
