@@ -73,7 +73,7 @@
  *        with no data-path evidence.
  */
 
-import { closeSync, openSync, readSync } from "node:fs";
+import { closeSync, fstatSync, openSync, readSync } from "node:fs";
 
 import type {
   PostToolUseInput,
@@ -210,7 +210,8 @@ function readFileHeadForDataPathEvidence(filePath: string): string | null {
   let fd: number | undefined;
   try {
     fd = openSync(filePath, "r");
-    const buffer = Buffer.alloc(DATA_PATH_EVIDENCE_FILE_HEAD_PROBE_BYTES);
+    // Sized to the file (capped), not a fixed 256 KiB zero-filled buffer per probe.
+    const buffer = Buffer.allocUnsafe(Math.min(fstatSync(fd).size, DATA_PATH_EVIDENCE_FILE_HEAD_PROBE_BYTES));
     const bytesRead = readSync(fd, buffer, 0, buffer.length, 0);
     return buffer.subarray(0, bytesRead).toString("utf8");
   } catch {
