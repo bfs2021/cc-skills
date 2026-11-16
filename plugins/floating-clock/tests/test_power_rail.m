@@ -108,9 +108,9 @@ void test_power_battery_segments_and_fields(void) {
 
 void test_power_accessory_parts_and_merge(void) {
     // The case alone, as measured while the buds were not connected to the Mac.
-    NSDictionary *caseOnly = @{ @"Name": @"Alex’s AirPods Pro Case", @"Part Identifier": @"Case", @"Current Capacity": @78,
+    NSDictionary *caseOnly = @{ @"Name": @"Owner’s AirPods Pro Case", @"Part Identifier": @"Case", @"Current Capacity": @78,
                                 @"Max Capacity": @100, @"Group Identifier": @"G1", @"Is Charging": @NO };
-    NSDictionary *combined = @{ @"Name": @"Alex’s AirPods Pro", @"Part Identifier": @"Combined", @"Group Identifier": @"G1",
+    NSDictionary *combined = @{ @"Name": @"Owner’s AirPods Pro", @"Part Identifier": @"Combined", @"Group Identifier": @"G1",
                                 @"Current Capacity": @80,
                                 @"Combined Parts": @[ @{ @"Part Identifier": @"Left", @"Current Capacity": @82 },
                                                       @{ @"Part Identifier": @"Right", @"Current Capacity": @80, @"Is Charging": @YES } ] };
@@ -118,22 +118,22 @@ void test_power_accessory_parts_and_merge(void) {
     NSArray *parts = [FCAccessoryPart partsFromDescriptions:mixed];
     CHECK(parts.count == 3, "case + left + right, junk dropped: %lu", (unsigned long)parts.count);
 
-    NSArray *paired = @[ @[ @"Alex’s AirPods Pro", @"aa-bb", @YES ], @[ @"Alex’s Magic Trackpad", @"cc-dd", @YES ],
+    NSArray *paired = @[ @[ @"Owner’s AirPods Pro", @"aa-bb", @YES ], @[ @"Owner’s Magic Trackpad", @"cc-dd", @YES ],
                          @[ @"Office Speaker", @"ee-ff", @NO ] ];
-    NSArray<FCBTDevice *> *devs = FCMergeBluetoothDevices(paired, parts, @{ @"Alex’s Magic Trackpad": @64 });
+    NSArray<FCBTDevice *> *devs = FCMergeBluetoothDevices(paired, parts, @{ @"Owner’s Magic Trackpad": @64 });
     CHECK(devs.count == 2, "the speaker is neither connected nor reporting: %lu", (unsigned long)devs.count);
     FCBTDevice *pods = devs[0];
-    CHECK([pods.name isEqualToString:@"Alex’s AirPods Pro"] && [pods.levels[@"L"] integerValue] == 82
+    CHECK([pods.name isEqualToString:@"Owner’s AirPods Pro"] && [pods.levels[@"L"] integerValue] == 82
           && [pods.levels[@"R"] integerValue] == 80 && [pods.levels[@"C"] integerValue] == 78 && pods.charging, "pods parts merged");
     CHECK([devs[1].levels[@""] integerValue] == 64, "trackpad HID level");
 
     // Buds not connected: the case still shows, dimmed, with its address so a click can connect.
-    NSArray<FCBTDevice *> *idle = FCMergeBluetoothDevices(@[ @[ @"Alex’s AirPods Pro", @"aa-bb", @NO ] ],
+    NSArray<FCBTDevice *> *idle = FCMergeBluetoothDevices(@[ @[ @"Owner’s AirPods Pro", @"aa-bb", @NO ] ],
                                                          [FCAccessoryPart partsFromDescriptions:@[ caseOnly ]], @{});
     CHECK(idle.count == 1 && !idle[0].connected && [idle[0].address isEqualToString:@"aa-bb"], "case-only keeps the pairing");
     // A battery group no pairing explains is shown under its own name, with nothing to click.
     NSArray<FCBTDevice *> *orphan = FCMergeBluetoothDevices(@[], [FCAccessoryPart partsFromDescriptions:@[ caseOnly ]], @{});
-    CHECK(orphan.count == 1 && [orphan[0].name isEqualToString:@"Alex’s AirPods Pro"] && !orphan[0].address, "orphan group");
+    CHECK(orphan.count == 1 && [orphan[0].name isEqualToString:@"Owner’s AirPods Pro"] && !orphan[0].address, "orphan group");
     // Longest name wins: the "Pro 2" case is not claimed by "AirPods Pro".
     NSArray<FCBTDevice *> *two = FCMergeBluetoothDevices(@[ @[ @"AirPods Pro", @"a", @YES ], @[ @"AirPods Pro 2", @"b", @YES ] ],
         [FCAccessoryPart partsFromDescriptions:@[ @{ @"Name": @"AirPods Pro 2 Case", @"Part Identifier": @"Case", @"Current Capacity": @50 } ]], @{});
@@ -141,16 +141,34 @@ void test_power_accessory_parts_and_merge(void) {
         if ([d.name isEqualToString:@"AirPods Pro 2"]) CHECK([d.levels[@"C"] integerValue] == 50, "Pro 2 owns its case");
         else CHECK(d.levels.count == 0, "Pro does not");
     }
-    CHECK([FCShortDeviceName(@"Alex’s AirPods Pro") isEqualToString:@"AirPods Pro"], "owner dropped");
-    CHECK([FCShortDeviceName(@"Alex's Magic Trackpad") isEqualToString:@"Trackpad"], "straight quote + Magic");
+    // Live on 2026-11-15: two pairings both named "AirPods Pro", the connected one read by IOBluetooth
+    // (L34 R28, keyed by its address), and two accessory sources, "AirPods Pro" combined 90 and
+    // "Owner’s AirPods Pro" combined 28. The rail showed the buds twice. One device, the connected one,
+    // with its exact readings and no contradicting combined figure.
+    FCAccessoryPart *(^part)(NSString *, NSString *, NSString *, NSInteger) = ^(NSString *n, NSString *g, NSString *k, NSInteger v) {
+        FCAccessoryPart *p = [FCAccessoryPart new]; p.name = n; p.group = g; p.part = k; p.percent = v; return p;
+    };
+    NSArray<FCBTDevice *> *twins = FCMergeBluetoothDevices(
+        @[ @[ @"AirPods Pro", @"14-14", @YES ], @[ @"AirPods Pro", @"30-d8", @NO ] ],
+        @[ part(@"AirPods Pro", @"EF6F", @"Combined", 90), part(@"Owner’s AirPods Pro", @"88CA", @"Combined", 28),
+           part(@"AirPods Pro", @"14-14", @"Left", 34), part(@"AirPods Pro", @"14-14", @"Right", 28) ], @{});
+    CHECK(twins.count == 1, "one device, not two: %lu", (unsigned long)twins.count);
+    CHECK([twins.firstObject.address isEqualToString:@"14-14"] && twins.firstObject.connected, "the connected pairing");
+    CHECK(([twins.firstObject.levels isEqualToDictionary:@{ @"L": @34, @"R": @28 }]), "exact L/R only: %@", twins.firstObject.levels);
+    // The exact readings still take what they lack: the case, from the accessory source.
+    NSArray<FCBTDevice *> *withCase = FCMergeBluetoothDevices(@[ @[ @"AirPods Pro", @"14-14", @YES ] ],
+        @[ part(@"AirPods Pro", @"14-14", @"Left", 34), part(@"Owner’s AirPods Pro Case", @"88CA", @"Case", 61) ], @{});
+    CHECK(([withCase.firstObject.levels isEqualToDictionary:@{ @"L": @34, @"C": @61 }]), "case filled in: %@", withCase.firstObject.levels);
+    CHECK([FCShortDeviceName(@"Owner’s AirPods Pro") isEqualToString:@"AirPods Pro"], "owner dropped");
+    CHECK([FCShortDeviceName(@"Owner's Magic Trackpad") isEqualToString:@"Trackpad"], "straight quote + Magic");
     CHECK([FCShortDeviceName(@"A very long headphone name") isEqualToString:@"A very long hea…"], "%@", FCShortDeviceName(@"A very long headphone name"));
 }
 
 void test_power_bluetooth_segments(void) {
     FCBTDevice *pods = [FCBTDevice new];
-    pods.name = @"Alex’s AirPods Pro"; pods.address = @"aa-bb"; pods.connected = YES; pods.levels = @{ @"L": @82, @"R": @8, @"C": @45 };
+    pods.name = @"Owner’s AirPods Pro"; pods.address = @"aa-bb"; pods.connected = YES; pods.levels = @{ @"L": @82, @"R": @8, @"C": @45 };
     FCBTDevice *pad = [FCBTDevice new];
-    pad.name = @"Alex’s Magic Trackpad"; pad.address = @"cc-dd"; pad.connected = YES; pad.levels = @{ @"": @64 };
+    pad.name = @"Owner’s Magic Trackpad"; pad.address = @"cc-dd"; pad.connected = YES; pad.levels = @{ @"": @64 };
     NSArray *segs = FCBluetoothSegments(YES, YES, @"⌃⌥⇧B", @[ pods, pad ], 4);
     NSString *line = FCJoinPower(segs);
     CHECK([line isEqualToString:@"BT ● ⌃⌥⇧B  AirPods Pro L82 R8 C45 · Trackpad 64%"], "%@", line);
