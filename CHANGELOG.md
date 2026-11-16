@@ -1,3 +1,12 @@
+## [34.18.2](https://github.com/terrylica/cc-skills/compare/v34.18.1...v34.18.2) (2026-11-16)
+
+
+### Bug Fixes
+
+* **itp-hooks:** publishing reminder counts only publishes that run ([12158be](https://github.com/terrylica/cc-skills/commit/12158be188bb3b8229671fa71efbc626e121c62b))
+
+isPublishCommand now uses the shared shell-command walker, as the sitemap hook does since 34.18.1: a command that only mentions a publish (cat or grep of a deploy script, quoted text, a heredoc fed to anything but a shell) no longer uses up the session's reminder. Programs are resolved through npx/bunx/pnpx and pnpm/yarn dlx with a trailing @version dropped. Tests: five mention cases; 34 pass. Notes: docs/release-notes/34.18.2.md.
+
 ## [34.18.1](https://github.com/terrylica/cc-skills/compare/v34.18.0...v34.18.1) (2026-11-16)
 
 
