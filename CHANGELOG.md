@@ -1,3 +1,20 @@
+# [34.19.0](https://github.com/terrylica/cc-skills/compare/v34.18.2...v34.19.0) (2026-11-16)
+
+
+### Features
+
+* **itp-hooks:** hook-census measures hooks, outcomes and their cost ([6b47043](https://github.com/terrylica/cc-skills/commit/6b47043823168406d9138b7fdcafe2e4e3ec75a8))
+
+Nothing recorded what the hook system as a whole does: Claude Code writes a transcript record only for a hook that prints something, and the four orchestrators measured each sub-hook's time and threw it away. A session on this machine loads 130 hook registrations (60 from settings, 69 from 12 plugins, 1 module) and the orchestrators run 57 sub-hooks inside them, so a decision to add, merge or retire a guard had no baseline to be judged against.
+
+scripts/hook-census.ts (Bun, every tunable a flag, `spec` prints them as JSON): `inventory` lists every handler per event from the settings files, enabled plugins' hooks.json and module plugins, expands the four orchestrator registries by static parsing (a hook module runs on import, so it is never imported) and diffs two launchers; `outcomes` streams transcripts one file at a time (.jsonl and .jsonl.br, Brotli decoded in-process) and counts denies, asks, contexts, decision blocks, timeouts and errors per guard tag; `timing` gives p50/p95/max per hook, sub-hook and event, and overhead per session; `rules` validates a standing-rules TOML against the instruction files and the loaded hooks; `report` writes all of it with REPORT.md and a payload-free labels.toml; `window` opens or closes the timing window.
+
+hooks/lib/orchestrator-subhook-timing.ts: the four orchestrators now record each sub-hook's elapsed ms and verdict, from a fixed key list (never a command, path, content or prompt), only while ~/.claude/state/hook-census/timing-window.json holds a future `until`, so a window closes itself. Fail-open: an error in recording is swallowed and can never change a verdict. The Bash orchestrator gains the per-guard timing it never had. The bun test preload now points ITP_HOOKS_HOOK_CENSUS_DIR at a throwaway directory, so a test run cannot write into a live window.
+
+Measured on real data 2026-11-16: inventory totals match Claude Code's own "Registered 69 hooks from 54 plugins" debug line for the plugin share; deny counts for three guards match an independent rg count exactly inside the window (76, 34, 8); a 3-day scan read 206 files and 477k lines in 4.8 s at 195 MB peak RSS. A debug-log probe showed Claude Code's debug log times every hook but also records hook stdout, including a rewritten command, so the census reads debug logs when given them but the docs do not enable them by default.
+
+Tests: 17 census tests (every transcript record shape, a Brotli transcript, a two-launcher config root, the real orchestrator registries, the rules validator, an interpreter-set drift check against scripts/validate-plugins.mjs) and 10 timing tests (closed, expired, malformed and open windows, the key whitelist, fail-open). moon run repo:check green: unit suite 3257 pass, 0 fail. Spoke: plugins/itp-hooks/docs/hook-census.md.
+
 ## [34.18.2](https://github.com/terrylica/cc-skills/compare/v34.18.1...v34.18.2) (2026-11-16)
 
 
