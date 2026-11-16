@@ -9,7 +9,7 @@ Each spoke is the SSoT for its own subject. The hub carries only the hook invent
 | Spoke                                                                              | Topic                                                                                               |
 | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | [pretooluse-write-edit-orchestrator.md](./pretooluse-write-edit-orchestrator.md)   | PreToolUse Write\|Edit orchestrator: 11 blocking subhooks in one process                            |
-| [pretooluse-bash-guard-orchestrator.md](./pretooluse-bash-guard-orchestrator.md)   | #111 PreToolUse:Bash orchestrator: 26 guards in one process; pueue-wrap-guard and why it stays last |
+| [pretooluse-bash-guard-orchestrator.md](./pretooluse-bash-guard-orchestrator.md)   | #111 PreToolUse:Bash orchestrator: 28 guards in one process; pueue-wrap-guard and why it stays last |
 | [posttooluse-write-edit-orchestrator.md](./posttooluse-write-edit-orchestrator.md) | PostToolUse Write\|Edit orchestrator: 12 context-injecting subhooks; memory-efficiency reminder     |
 | [posttooluse-reminder.md](./posttooluse-reminder.md)                               | The standalone PostToolUse reminder hook                                                            |
 | [stop-hooks.md](./stop-hooks.md)                                                   | Stop-hook output: where each event's output goes and how summaries are routed                       |
@@ -52,6 +52,7 @@ Each spoke is the SSoT for its own subject. The hub carries only the hook invent
 | [pueue-reminder.md](./pueue-reminder.md)                                           | Pueue reminder detection patterns + exceptions                                                                                              |
 | [pueue-local-guard.md](./pueue-local-guard.md)                                     | Pueue commands must target the local daemon                                                                                                 |
 | [long-runtime-haiku-monitor-reminder.md](./long-runtime-haiku-monitor-reminder.md) | A run that may pass 5 minutes gets a background `haiku` health monitor (bare alias, so always the newest Haiku); hermetic + 32-mutant suite |
+| [publishing-standard-reminder.md](./publishing-standard-reminder.md) | Creating or publishing an HTML page points once per session at Skill(devops-tools:publishing-standard) (live age marker, provenance, index link, one registry, sitemap) |
 | [cargo-tty-guard.md](./cargo-tty-guard.md)                                         | Cargo TTY suspension prevention (full guide: [/docs/cargo-tty-suspension-prevention.md](/docs/cargo-tty-suspension-prevention.md))          |
 
 ## Linters, type checkers and correctness

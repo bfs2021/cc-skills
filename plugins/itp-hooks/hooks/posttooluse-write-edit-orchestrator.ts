@@ -80,6 +80,7 @@ import { classifyPythonPreferenceNudgeForPostToolUseOrchestrator } from "./postt
 import { classifyTypeScriptUpgradeReminderForPostToolUseOrchestrator } from "./posttooluse-typescript-upgrade-reminder.ts";
 import { classifyMarkdownHardWrapReminderForPostToolUseOrchestrator } from "./posttooluse-markdown-hard-wrap-reminder.ts";
 import { classifyLeakageTaxonomyForPostToolUseOrchestrator } from "./posttooluse-leakage-taxonomy-reminder.ts";
+import { classifyPublishingStandardReminderForPostToolUseOrchestrator } from "./publishing-standard-reminder.ts";
 
 // ══════════════════════════════════════════════════════════════════════════
 //  Subhook registry — order matters (aggregation order in the reason)
@@ -170,6 +171,13 @@ const POSTTOOLUSE_EDIT_TIME_ORCHESTRATOR_SUBHOOK_REGISTRY: PostToolUseSubhookReg
     classify: classifyTypeScriptUpgradeReminderForPostToolUseOrchestrator,
     description:
       "Surfaces a TypeScript 7 upgrade reminder ONCE PER SESSION on the first eligible code-file Write/Edit (.ts/.tsx/.mts/.cts, package.json, tsconfig.json). Encodes the iter-92 TypeScript version-guard doctrine (~/.claude/skills/typescript-7/references/doctrine.md): greenfield policy is \"typescript\": \"latest\" + commit lockfile; compiler-embedding tools (Volar, Angular, typescript-eslint, ts-morph) use dual-install compat alias (TS 6.0 API unavailable in 7.0; restored 7.1+). Reminder content names the highest-yield breaking changes (types defaults to [], strict defaults true, baseUrl/downlevelIteration/target/moduleResolution/module/esModuleInterop hard errors, rootDir defaults to ./), perf knobs (--checkers, --builders, --singleThreaded), and invites surfacing concrete refactor opportunities. ONE implicit exemption: ephemeral temp-dir scratch via the shared iter-124 helper (throwaway scripts not worth nudging). Pure O(1) extension + temp-scratch + once-per-session gate-claim (atomic O_EXCL filesystem operation). Algorithm in classifyTypeScriptUpgradeReminderForPostToolUseOrchestrator (operator directive 2026-07-24).",
+  },
+  {
+    name: "publishing-standard-reminder",
+    timeoutMs: 2000,
+    classify: classifyPublishingStandardReminderForPostToolUseOrchestrator,
+    description:
+      "After a Write/Edit of an HTML page (.html .htm .xhtml) outside temp scratch directories, a one-line pointer to Skill(devops-tools:publishing-standard), ONCE PER SESSION (gate publishing-standard-page): every page carries a live changed-N-ago marker with a heat dot, the exact build time, version, commit and source, a link back to its index, one record in exactly one published.v1 registry, and a place on the sitemap. Non-blocking; no session id, no reminder. Pure checks, no subprocess. Spoke: docs/publishing-standard-reminder.md.",
   },
   {
     name: "markdown-hard-wrap-reminder",

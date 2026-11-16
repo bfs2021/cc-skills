@@ -52,6 +52,7 @@ ssh <gpu-host> "curl -s 'http://localhost:8123/?query=SELECT+1'"
 - [ml-failfast-validation](./skills/ml-failfast-validation/SKILL.md)
 - [mlflow-python](./skills/mlflow-python/SKILL.md)
 - [project-directory-migration](./skills/project-directory-migration/SKILL.md)
+- [publishing-standard](./skills/publishing-standard/SKILL.md) — the must-haves of every published HTML page (live age marker, provenance, index link) and one `published.v1` registry per link, aggregated by the sitemap
 - [pueue-job-orchestration](./skills/pueue-job-orchestration/SKILL.md)
 - [macos-fda-grant-helper](./skills/macos-fda-grant-helper/SKILL.md) — interactive Full Disk Access (FDA) grant walkthrough for launchd-spawned binaries (iter 21)
 - Pushover notifications **moved 2026-06-05** to the dedicated [`pushover-commander`](../pushover-commander/CLAUDE.md) plugin (send, emergency, headless app/sound management, incident-report rendering, UUID/JSONL verbatim audit). The former `pushover-verbatim-notify` skill is now `pushover-commander:verbatim-audit-notify`.

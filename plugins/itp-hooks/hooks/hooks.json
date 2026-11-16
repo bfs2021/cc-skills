@@ -15,7 +15,7 @@
             "type": "command",
             "command": "bun \"${CLAUDE_PLUGIN_ROOT}\"/hooks/pretooluse-bash-guard-orchestrator.ts",
             "timeout": 60,
-            "description": "Runs the 26 itp-hooks Bash guards listed in BASH_GUARD_REGISTRY in one bun process; the first deny wins and each guard fails open. Escape tokens are in each guard's registry entry."
+            "description": "Runs the 28 itp-hooks Bash guards listed in BASH_GUARD_REGISTRY in one bun process; the first deny wins and each guard fails open. Escape tokens are in each guard's registry entry."
           }
         ]
       },
@@ -200,7 +200,7 @@
             "type": "command",
             "command": "bun \"${CLAUDE_PLUGIN_ROOT}\"/hooks/posttooluse-write-edit-orchestrator.ts",
             "timeout": 15,
-            "description": "Runs 12 post-edit checks in parallel and merges their context: leakage-taxonomy, ty, tsc, oxlint, biome, vale-claude-md, memory-efficiency, ssot-principles, claude-md-size-budget, python-preference, typescript-upgrade, markdown-hard-wrap."
+            "description": "Runs 13 post-edit checks in parallel and merges their context: leakage-taxonomy, ty, tsc, oxlint, biome, vale-claude-md, memory-efficiency, ssot-principles, claude-md-size-budget, python-preference, typescript-upgrade, publishing-standard, markdown-hard-wrap."
           }
         ]
       },
