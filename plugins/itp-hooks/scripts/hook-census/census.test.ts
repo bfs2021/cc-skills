@@ -4,10 +4,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { brotliCompressSync } from "node:zlib";
 import { OutcomeAccumulator, readDebugLogs, readSubhookTimingFiles, stat, TimingAccumulator } from "./aggregate.ts";
-import { HOOK_COMMAND_INTERPRETERS, hookIdFromCommand, parseHookCommand } from "./command.ts";
-import { buildInventory, ORCHESTRATOR_REGISTRIES, parseOrchestratorRegistry } from "./inventory.ts";
+import { HOOK_COMMAND_INTERPRETERS, hookIdFromCommand, parseHookCommand, shortHash } from "./command.ts";
+import { buildInventory, ORCHESTRATOR_REGISTRIES, parseOrchestratorRegistry, statusAliases } from "./inventory.ts";
 import { boldBulletsInSection, checkRules, headingsInSection } from "./rules.ts";
-import { type CensusEvent, classifyRecord, extractTags, listTranscriptFiles, type ScanStats, scanTranscript } from "./transcripts.ts";
+import { type CensusEvent, classifyRecord, extractTags, listTranscriptFiles, PROMPT_HOOK_ID, type ScanStats, scanTranscript } from "./transcripts.ts";
 
 /** The literal a hooks.json command carries; Claude Code substitutes it, the census must not. */
 const PLUGIN_ROOT_VAR = "$" + "{CLAUDE_PLUGIN_ROOT}";
@@ -46,6 +46,25 @@ describe("command", () => {
     expect(id.startsWith("inline:")).toBe(true);
     expect(id).not.toContain("secret");
     expect(parseHookCommand("sh -lc 'true'").inline).toBe(true);
+  });
+
+  test("text that is not a command never becomes an id", () => {
+    // What Claude Code writes in a hook's command field besides commands: a prompt hook's prompt with the user's
+    // words in it, a configured statusMessage, an inline `if` script; and a capitalised word that macOS's
+    // case-insensitive file system would resolve to an executable.
+    for (const text of [
+      "Please check whether the invoice went out",
+      "Checking headless claude -p usage...",
+      "if [ -f x ]; then exit 0; fi",
+      "Make the release notes longer",
+      "it@example.com please reply",
+      "https://example.com/private/page is down",
+    ]) {
+      const id = hookIdFromCommand(text);
+      expect(id).toBe(`inline:${shortHash(text)}`);
+    }
+    expect(hookIdFromCommand("callback")).toBe("builtin:callback");
+    expect(hookIdFromCommand("ls -la")).toBe("ls");
   });
 });
 
@@ -86,7 +105,7 @@ const AFTER = [{ name: "not-me" }];`;
       JSON.stringify({
         hooks: {
           PreToolUse: [{ matcher: "Bash", hooks: [{ type: "command", command: `bun ${PLUGIN_ROOT_VAR}/hooks/pretooluse-bash-guard-orchestrator.ts`, timeout: 60 }] }],
-          Stop: [{ hooks: [{ type: "command", command: `bun ${PLUGIN_ROOT_VAR}/hooks/stop-x.ts` }] }],
+          Stop: [{ hooks: [{ type: "command", command: `bun ${PLUGIN_ROOT_VAR}/hooks/stop-x.ts`, statusMessage: "Checking stop state..." }] }],
         },
       }),
     );
@@ -118,6 +137,9 @@ const AFTER = [{ name: "not-me" }];`;
     expect(inv.plugins.map((p) => p.id)).toEqual(["p@m"]);
     expect(inv.launcherDiff).toEqual({ onlyInFirst: ["PreToolUse|Bash|a-only.sh"], onlyInSecond: ["PreToolUse|Bash|b-only.sh"] });
     expect(JSON.stringify(inv)).not.toContain("bash ~/.claude");
+    // Claude Code records a hook with a statusMessage under that text; the alias counts it under its script.
+    expect(statusAliases(inv).get(hookIdFromCommand("Checking stop state..."))).toBe("stop-x.ts");
+    expect(JSON.stringify(inv)).not.toContain("Checking stop state");
   });
 });
 
@@ -137,7 +159,8 @@ describe("transcripts", () => {
     expect(extractTags("[orchestrator-subhook: ty-type-check]\n…\n[orchestrator-subhook: oxlint-check]")).toEqual(["ty-type-check", "oxlint-check"]);
     expect(extractTags("Plain text with a secret 12345 inside")[0]).toBe("untagged:Plain text with a");
     expect(extractTags("ℹ️ 13 Claude windows open")).toEqual(extractTags("ℹ️ 15 Claude windows open"));
-    expect(extractTags("ℹ️ 13 Claude windows open")[0]).toBe("untagged:N Claude windows");
+    expect(extractTags("ℹ️ 13 Claude windows open")[0]).toBe("untagged:N Claude windows open");
+    expect(extractTags("BLOCKED gmail-send-guard: /Users/x/private/draft.eml is unsigned")[0]).toBe("untagged:BLOCKED gmail-send-guard:");
   });
 
   test("classifies every record shape, keeping no message text", () => {
@@ -152,10 +175,19 @@ describe("transcripts", () => {
         type: "attachment",
         attachment: { type: "hook_blocking_error", hookName: "PostToolUse:Write", hookEvent: "PostToolUse", blockingError: { blockingError: "[typescript-upgrade-reminder] timed out after 2000ms — check", command: "bun /p/hooks/posttooluse-write-edit-orchestrator.ts" } },
       }),
-      ...classifyRecord({ type: "system", subtype: "stop_hook_summary", hookInfos: [{ command: "bun /p/hooks/stop-orchestrator.ts", durationMs: 812 }], toolUseID: "t9" }),
+      ...classifyRecord({
+        type: "system",
+        subtype: "stop_hook_summary",
+        hookInfos: [
+          { command: "bun /p/hooks/stop-orchestrator.ts", durationMs: 812 },
+          { command: "Summarise private-token words from a prompt", promptText: "Summarise private-token words from a prompt", durationMs: 9000 },
+        ],
+        toolUseID: "t9",
+      }),
     ];
     const kinds = events.map((e) => e.kind);
-    expect(kinds).toEqual(["deny", "ask", "duration", "timeout", "context", "decision-block", "subhook-timeout", "duration"]);
+    expect(kinds).toEqual(["deny", "ask", "duration", "timeout", "context", "decision-block", "subhook-timeout", "duration", "duration"]);
+    expect(events[8]).toMatchObject({ hookId: PROMPT_HOOK_ID, ms: 9000 });
     expect(events[0]).toMatchObject({ kind: "deny", event: "PreToolUse", tool: "Bash", tag: "[gh-tools]", toolUseId: "t1", sessionId: "s1" });
     expect(events[3]).toMatchObject({ hookId: "slow.ts", timeoutMs: 60000 });
     expect(events[6]).toMatchObject({ hookId: "typescript-upgrade-reminder", timeoutMs: 2000 });
@@ -165,7 +197,7 @@ describe("transcripts", () => {
   test("streams .jsonl and .jsonl.br, honours the time window, counts bad lines", async () => {
     const proj = join(tmp, "projects", "-Users-x-repo");
     mkdirSync(join(proj, "sess", "subagents"), { recursive: true });
-    const lines = [JSON.stringify(deny("[A]")), JSON.stringify(deny("[B]", "2025-01-01T00:00:00Z")), '{"type":"user","hook_":broken'].join("\n");
+    const lines = [JSON.stringify(deny("[A]")), JSON.stringify(deny("[B]", "2025-01-01T00:00:00Z")), '{"type":"user","source":"hook",broken'].join("\n");
     writeFileSync(join(proj, "s1.jsonl"), lines);
     writeFileSync(join(proj, "s2.jsonl.br"), brotliCompressSync(Buffer.from(JSON.stringify(deny("[C]")))));
     writeFileSync(join(proj, "sess", "subagents", "agent-1.jsonl"), JSON.stringify(deny("[D]")));

@@ -37,7 +37,10 @@ Per-event wall time per tool call is the slowest recorded hook of that call, bec
 
 ## Privacy contract
 
-Outputs hold guard tags (the bracketed head of a message, at most 80 characters, digits in untagged heads replaced by `N`), hook ids (a script's file name, or `inline:<hash>` for an inline shell script), event and tool names, session and tool-use ids, timestamps, counts and milliseconds. Never a command, tool input, file content, prompt or the text after a tag. `labels.toml` samples denies by id only: the operator opens the transcript to judge each one.
+Outputs hold guard tags, hook ids, event and tool names, session and tool-use ids, timestamps, counts and milliseconds. Never a command, tool input, file content, prompt or the text after a tag. `labels.toml` samples denies by id only: the operator opens the transcript to judge each one.
+
+- **Guard tag**: the bracketed head of a message, at most 80 characters. A message without one is counted as `untagged:` plus its leading plain words (at most four, numbers as `N`); the first word holding anything else (a path, an address, a quote) ends it, because what follows is often the guard echoing the command it refused.
+- **Hook id**: a script's file name, an executable found on PATH under exactly that spelling, or `inline:<hash>` for anything else. Claude Code's `command` field is not always a command: for a hook with a `statusMessage` it holds that message, and for a prompt hook it holds the prompt with the user's words substituted into it. The inventory joins a status message back to its script; Stop entries that carry `promptText` are counted under the single id `prompt-hook`. Before 34.19.1 the first word of such text became the id, which put prompt words, an address and a host name into `timing.json` and `REPORT.md`; rerun `report` over any census directory written by 34.19.0.
 
 The timing records are built from a fixed key list (`SUBHOOK_TIMING_KEYS`); any other field a caller passes is dropped.
 
@@ -50,4 +53,4 @@ The timing records are built from a fixed key list (`SUBHOOK_TIMING_KEYS`); any 
 - Plugin versions: transcript records keep `${CLAUDE_PLUGIN_ROOT}` unexpanded, so outcomes are not attributed to a plugin version; the inventory reports the installed versions, and debug logs name the version a session ran.
 - A silent hook appears in timing only through debug logs or, for orchestrator sub-hooks, the timing window.
 - A deny's tag is the guard's own label; two guards sharing a label are counted together.
-- Resource use: one process, one transcript at a time; 3 days of transcripts (206 files, 477k lines) took 4.8 s and 195 MB peak RSS on 2026-11-16.
+- Resource use: one process, one transcript at a time, with a forced collection every `--gc-every` transcripts (default 50). On 2026-11-16, 30 days of transcripts (1,921 files, 3.06 million lines, 1.58 million parsed) took 24 s and 600 to 680 MB peak RSS as `/usr/bin/time -l` measures it; the run line in `REPORT.md` is the process's own `getrusage` reading, which came out about half of that on the same runs. 34.19.0 needed 41 s and 1.8 GB for the same window, because the timing summary copied every sample array once per tool call and once per sort comparison.

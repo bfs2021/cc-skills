@@ -22,7 +22,16 @@ export interface HandlerRow {
   hookId: string;
   script: string | null;
   timeoutSec: number | null;
+  /** Id of the hook's statusMessage: Claude Code records a hook that has one under that text instead of its command. */
+  statusId?: string;
   subhooks?: SubhookRow[];
+}
+
+/** statusId → hookId for every handler with a statusMessage, so its transcript records count under its script. */
+export function statusAliases(inv: Inventory): Map<string, string> {
+  const aliases = new Map<string, string>();
+  for (const h of inv.handlers) if (h.statusId && h.statusId !== h.hookId) aliases.set(h.statusId, h.hookId);
+  return aliases;
 }
 
 export interface Inventory {
@@ -122,6 +131,7 @@ function handlersFromHooksObject(hooks: unknown, source: string, pluginRoot: str
         const parsed = parseHookCommand(h.command);
         const script = parsed.inline ? null : resolveScript(parsed.scriptToken, pluginRoot);
         const row: HandlerRow = { event, matcher, source, kind: "command", hookId: hookIdFromCommand(h.command), script, timeoutSec };
+        if (typeof h.statusMessage === "string" && h.statusMessage !== "") row.statusId = hookIdFromCommand(h.statusMessage);
         const registry = ORCHESTRATOR_REGISTRIES[row.hookId];
         if (registry && script) {
           try {

@@ -5,10 +5,14 @@
  * strips an `env` prefix, skips interpreter flags and a `run` subcommand, and takes the next token as the script.
  * command.test.ts fails when HOOK_COMMAND_INTERPRETERS drifts from the validator's set.
  *
- * Added here: an inline shell script (`bash -c '…'`, `sh -lc …`) has no script file, so its id is
- * `inline:<hash>` of the command; the command text itself never leaves this module.
+ * Added here: an id is a name only when the command names a script (a path, or a file with a script extension) or an
+ * executable found on PATH under exactly that spelling. Anything else is `inline:<hash>` of the command: an inline
+ * shell script (`bash -c '…'`, `if …; then`), and two texts Claude Code records in a hook's `command` field that are
+ * not commands at all, a configured `statusMessage` and a prompt hook's prompt with the user's words substituted
+ * into it. The command text itself never leaves this module.
  */
-import { basename } from "node:path";
+import { readdirSync } from "node:fs";
+import { basename, dirname } from "node:path";
 
 export const HOOK_COMMAND_INTERPRETERS = new Set([
   "bun",
@@ -82,9 +86,34 @@ export function shortHash(text: string): string {
   return Bun.hash(text).toString(16).slice(0, 10);
 }
 
-/** The id a hook is counted under: its script file name, or inline:<hash> for an inline shell script. */
+const SCRIPT_EXTENSION = /\.(sh|bash|zsh|ts|mts|cts|mjs|cjs|js|py|rb|pl)$/;
+const onPathCache = new Map<string, boolean>();
+
+/** True when `name` is an executable on PATH under exactly this spelling; macOS file systems ignore case, so "Make" finds make. */
+function isExecutableOnPath(name: string): boolean {
+  let hit = onPathCache.get(name);
+  if (hit === undefined) {
+    hit = false;
+    const found = /^[\w.+-]{1,64}$/.test(name) ? Bun.which(name) : null;
+    if (found) {
+      try {
+        hit = readdirSync(dirname(found)).includes(name);
+      } catch {
+        hit = false;
+      }
+    }
+    onPathCache.set(name, hit);
+  }
+  return hit;
+}
+
+/** The id a hook is counted under: its script's file name, an executable's name, or inline:<hash> for anything else. */
 export function hookIdFromCommand(command: string): string {
+  if (command === "callback") return "builtin:callback";
   const parsed = parseHookCommand(command);
-  if (parsed.inline || !parsed.scriptToken) return `inline:${shortHash(command)}`;
-  return basename(parsed.scriptToken);
+  const token = parsed.scriptToken;
+  if (parsed.inline || !token || token.includes("://") || token.includes("@")) return `inline:${shortHash(command)}`;
+  if (token.includes("/") || SCRIPT_EXTENSION.test(token)) return basename(token);
+  if (parsed.interpreter === null && isExecutableOnPath(token)) return token;
+  return `inline:${shortHash(command)}`;
 }
