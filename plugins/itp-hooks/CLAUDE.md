@@ -123,5 +123,6 @@ Set by Claude Code when a hook fires — hooks read them, users do not set them.
 ## References
 
 - [docs/spoke-index.md](./docs/spoke-index.md) — annotated index of all spokes in [`docs/`](./docs/)
+- [docs/hook-census.md](./docs/hook-census.md) — `scripts/hook-census.ts`: what the hooks are, what they blocked, what they cost; the orchestrators' sub-hook timing window
 - [lifecycle-reference.md](skills/hooks-development/references/lifecycle-reference.md) — hook lifecycle and best practices
 - [bootstrap-monorepo.md](../itp/skills/bootstrap-monorepo/references/bootstrap-monorepo.md) — monorepo scaffolding patterns
