@@ -1,3 +1,17 @@
+## [34.18.1](https://github.com/terrylica/cc-skills/compare/v34.18.0...v34.18.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* **itp-hooks:** count a Cloudflare deploy only when the shell runs it ([3c94eec](https://github.com/terrylica/cc-skills/commit/3c94eecc9e31ce446be2be00ac569e746e375941))
+
+The sitemap reminder matched deploy text anywhere in a command, so reading a deploy script (cat, sed, grep), quoting a deploy in a commit message or writing a note that names one recorded a "deploy" and kept the Stop check refusing the turn end. One session was blocked about six times in a day without deploying anything. isDeployCommand now lexes the command with the shared shell-command walker and counts only an invocation the shell would actually run.
+
+- Counts wrangler deploy, wrangler pages deploy and wrangler versions deploy, run directly, through npx/bunx/pnpx or pnpm/yarn dlx, behind env, timeout or sudo, inside bash -c or ssh; and a workers_deploy.sh wrapper run directly or through a shell.
+- Ignores quoted text, comments, heredoc bodies fed to anything but a shell, and arguments of other programs (cat, sed, grep, echo, git commit -m).
+- Unchanged: --dry-run, -h and --help are not deploys; the sitemap tool itself (cfsm.py) never counts; the escape marker still skips.
+- Tests: seven mention cases from real sessions, six run forms (29 pass).
+
 # [34.18.0](https://github.com/terrylica/cc-skills/compare/v34.17.2...v34.18.0) (2026-11-16)
 
 
