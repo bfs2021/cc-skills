@@ -39,7 +39,7 @@ Orchestrator arc: [pretooluse-write-edit-orchestrator.md](./docs/pretooluse-writ
 | `pretooluse-pueue-local-guard.ts`                     | Bash orch.               | Pueue commands must target the local daemon   | [→](./docs/pueue-local-guard.md)                                   |
 | `pretooluse-cargo-tty-guard.ts`                       | Bash (in pueue-wrap)     | Backgrounded cargo to PUEUE (via pueue-wrap)  | [→](./docs/cargo-tty-guard.md)                                     |
 | `pretooluse-skill-plugin-root-guard.ts`               | Write\|Edit orch.        | Skills must use `cc-plugin-root`              | [→](./docs/skill-plugin-root-guard.md)                             |
-| `pretooluse-bash-guard-orchestrator.ts`               | Bash                     | Runs the 26 Bash guards in one bun process    | [→](./docs/pretooluse-bash-guard-orchestrator.md)                  |
+| `pretooluse-bash-guard-orchestrator.ts`               | Bash                     | Runs the 28 Bash guards in one bun process    | [→](./docs/pretooluse-bash-guard-orchestrator.md)                  |
 | `pretooluse-pueue-wrap-guard.ts`                      | Bash                     | Auto-wraps long-running commands (see #3)     | [→](./docs/pretooluse-bash-guard-orchestrator.md#pueue-wrap-guard) |
 | `pretooluse-webfetch-fallback-guard.ts`               | WebFetch                 | Denies built-in WebFetch; no escape hatch     | `~/.claude/skills/web-fetch/SKILL.md`                              |
 | `pretooluse-release-notes-extensiveness-guard.ts`     | Bash orch.               | Hard-blocks releases with thin notes          | [→](./docs/release-notes-extensiveness-guard.md)                   |
@@ -53,6 +53,7 @@ Orchestrator arc: [pretooluse-write-edit-orchestrator.md](./docs/pretooluse-writ
 | `pretooluse-broad-process-signal-guard.ts`            | Bash orch. + Write, Edit | Blocks broad kill/pkill/killall (+ scripts)   | [→](./docs/broad-process-signal-guard.md)                          |
 | `pretooluse-old-git-guard.ts`                         | Bash orch.               | Blocks hook-firing git below 2.54             | [→](./docs/old-git-guard.md)                                       |
 | `pretooluse-long-runtime-haiku-monitor-reminder.ts`   | Bash orch.               | Long run: start a `haiku` health monitor      | [→](./docs/long-runtime-haiku-monitor-reminder.md)                 |
+| `publishing-standard-reminder.ts`                     | Bash orch.               | Publish command: point at the standard        | [→](./docs/publishing-standard-reminder.md)                        |
 
 ### PostToolUse
 
@@ -79,6 +80,7 @@ Orchestrator arc: [posttooluse-write-edit-orchestrator.md](./docs/posttooluse-wr
 | `posttooluse-python-preference-nudge.ts`          | PostToolUse orch. | Language-preference reminder on `.py` edits   | [→](./docs/python-preference-nudge.md)                                        |
 | `posttooluse-pii-exposure-reminder.ts`            | Write\|Edit       | Reminder on third-party email/phone on disk   | [→](./docs/secret-and-pii-exposure-guard.md)                                  |
 | `posttooluse-markdown-hard-wrap-reminder.ts`      | PostToolUse orch. | Reminds on net-new hard-wrapped `.md` prose   | [→](./docs/markdown-hard-wrap-reminder.md)                                    |
+| `publishing-standard-reminder.ts`                 | PostToolUse orch. | HTML page written: point at the standard      | [→](./docs/publishing-standard-reminder.md)                                   |
 | `posttooluse-bash-markdown-hard-wrap-reminder.ts` | Bash              | Same, for `.md` written by a shell command    | [→](./docs/markdown-hard-wrap-reminder.md)                                    |
 | `posttooluse-claude-md-size-budget-reminder.ts`   | PostToolUse orch. | CLAUDE.md character-budget reminder (see #1)  | [→](./docs/posttooluse-write-edit-orchestrator.md)                            |
 
