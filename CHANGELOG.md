@@ -1,3 +1,19 @@
+# [34.18.0](https://github.com/terrylica/cc-skills/compare/v34.17.2...v34.18.0) (2026-11-16)
+
+
+### Features
+
+* **devops-tools:** publishing-standard skill and its reminder hook ([045ff20](https://github.com/terrylica/cc-skills/commit/045ff2015aa2e39589d3f7d25032552992e363f0))
+
+Pages were going out without a reliable answer to "how fresh is this, where does it come from, and where are its siblings": hand-written "updated" lines that go stale, one flat colour for every age, pages with no way back to their index, and links recorded in several places or none. The new skill states what every published HTML page carries, whatever the host or styling. It also states how each published link is recorded once, in exactly one registry that a sitemap reads.
+
+- devops-tools/skills/publishing-standard: the must-haves (a live "changed N ago" marker with a heat dot, the exact moment written at build time, version and commit, source, a link back to the index), the federated single source of truth (one published.v1 registry per publishing repository, aggregated and never copied by the sitemap, the host's own inventory flagging anything unrecorded), the audience rule for linking a sitemap, and the publish sequence.
+- references/age-marker.md: a library-free snippet (Intl.RelativeTimeFormat with a fallback, nine OKLCH heat steps as hex, log scale of age, legend).
+- references/registry-schema.md: the published.v1 fields and rules.
+- itp-hooks/publishing-standard-reminder.ts: one line pointing at the skill, once per session at each of two moments: before a command that publishes pages (PreToolUse, Bash orchestrator) and after an HTML page is written (PostToolUse, Write/Edit orchestrator). Never denies; escape PUBLISHING-STANDARD-OK.
+- The cloudflare-workers-publish, html-showcase page-template, static-page-stack and full-width-artifact skills point at the standard.
+- The Bash guard count in itp-hooks' docs corrected to 28 (main already had 27).
+
 ## [34.17.2](https://github.com/terrylica/cc-skills/compare/v34.17.1...v34.17.2) (2026-11-16)
 
 
