@@ -1,3 +1,18 @@
+# [34.20.0](https://github.com/terrylica/cc-skills/compare/v34.19.2...v34.20.0) (2026-11-16)
+
+
+### Features
+
+* **orca-tools:** close Orca's Setup tab once the setup succeeds ([2c2460b](https://github.com/terrylica/cc-skills/commit/2c2460b49d2ef40a6843ab7aa3e9ce051875a210))
+
+Orca runs a repository's setup script (orca.yaml scripts.setup, or the script in the repo's Orca settings) in a shell tab of its own, paneTitle "Setup", a few seconds after `orca worktree create` returns. It types `bash -lc '<runner>'; status=$?; printf '\n__ORCA_SETUP_COMPLETE__:<id>:%s\n' "$status"; exit "$status"` into that shell, so the exit ends only the inner bash and the tab stays beside the agent's for good. Users read it as a stray second tab (measured on Orca 1.4.255, el02, 2026-11-16; `terminal wait --for exit` never fires for it, and the create JSON carries no setup receipt).
+
+worktree-spinoff now waits up to 30 s for that tab when Orca's policy runs a setup (--setup run, or setupRunPolicy run-by-default with a script in orca.yaml or the repo settings), reads Orca's own completion marker from the tab's output, and closes the tab on status 0. A failed setup, or one still running at --setup-timeout (default 600 s), keeps its tab with its output and is warned; --keep-setup-tab keeps it on success too. Orca still decides whether and what to run (its policy, its approval of the script), so none of Orca's setup logic is copied. The JSON line gains setup, setup_exit and setup_tab.
+
+The prompt-title check now ignores whitespace: the accumulated stream drops the spaces a full-screen agent draws by cursor moves (orca terminal read --help), so a delivered prompt read as "Probe2:Setuptabclose" and was reported as prompt_seen false after a 90 s wait.
+
+SKILL.md: pass --surface chat only when the user asks for a chat in so many words (an agent read "its own session" as a chat on 2026-11-16); the Setup-tab mechanism and the whitespace pitfall are documented; CLAUDE.md records the two live cycles on el02.
+
 ## [34.19.2](https://github.com/terrylica/cc-skills/compare/v34.19.1...v34.19.2) (2026-11-16)
 
 
