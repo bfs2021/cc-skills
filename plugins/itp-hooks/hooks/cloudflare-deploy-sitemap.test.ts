@@ -38,7 +38,24 @@ describe("isDeployCommand", () => {
     "npx wrangler@4 whoami",
     "python3 cfsm.py deploy ventures",
     "grep -n wrangler deploy notes.md".replace("wrangler deploy", "wrangler-deploy"),
+    // mentions, not runs (each blocked a session's turn end before 2026-11-15)
+    "cat scripts/share.sh; cat scripts/workers_deploy.sh",
+    "sed -n 84,125p scripts/workers_deploy.sh",
+    "grep -rn 'workers_deploy_token' docs scripts",
+    "grep -n 'npx wrangler pages deploy' notes.md",
+    "git commit -m 'docs: how to run wrangler deploy'",
+    "cat > notes.md <<'EOF'\nRun wrangler deploy to publish.\nEOF",
+    "echo \"npx wrangler@4 deploy\"",
   ])("not a deploy: %s", (c) => expect(lib.isDeployCommand(c)).toBe(false));
+
+  test.each([
+    "cd site && npx -y wrangler@4 deploy",
+    "env WRANGLER_SEND_METRICS=false bunx wrangler@4 deploy --assets out",
+    "scripts/workers_deploy.sh --touch-id",
+    "timeout --foreground 2400 scripts/workers_deploy.sh --touch-id > log 2>&1",
+    "pnpm dlx wrangler pages deploy dist",
+    "bash -c 'npx wrangler deploy'",
+  ])("still a deploy: %s", (c) => expect(lib.isDeployCommand(c)).toBe(true));
 });
 
 describe("hooks", () => {
