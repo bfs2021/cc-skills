@@ -1,3 +1,18 @@
+## [34.19.2](https://github.com/terrylica/cc-skills/compare/v34.19.1...v34.19.2) (2026-11-16)
+
+
+### Bug Fixes
+
+* **web-forge:** find GitHub OAuth form fields by label, not exact name ([5769e08](https://github.com/terrylica/cc-skills/commit/5769e0853df2cd563ed45336875abd46240d8a39))
+
+GitHub's "New OAuth App" form replaced oauth_application[callback_url] with a "Redirect URI" list on 2026-11-16, so gh-oauth-app.mjs, which filled the callback by that exact name, could no longer fill the form.
+
+- oauth-form.mjs: readControls lists the form's controls in the page; pickField matches label first, then a rename-tolerant name pattern, and refuses zero or several matches; selectorFor escapes quotes
+- gh-oauth-app.mjs fills through it and reads each value back before Register; the callback goes to Redirect URI row 0
+- oauth-form.test.ts: both form shapes, fallback, refusal, selectors
+- dashboard-forge Vendor Quirks: dated note on the new form's controls
+- release notes 34.19.2
+
 ## [34.19.1](https://github.com/terrylica/cc-skills/compare/v34.19.0...v34.19.1) (2026-11-16)
 
 
