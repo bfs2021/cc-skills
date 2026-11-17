@@ -263,7 +263,15 @@ JXA
     fi
     if [ -n "$tok" ]; then export PLAYWRIGHT_MCP_EXTENSION_TOKEN="$tok"; fi
     unset tok
-    exec npx -y @playwright/mcp@latest --extension --profile-dir-name "$dir" \
+    # No tab group by default (measured 2026-11-17). The extension puts each connection's tabs in a group titled
+    # "Playwright · <client>"; when a run then closes the group's last tab, Chrome (131+) treats it as "close group" and
+    # SAVES the group to the bookmarks bar, synced to every device and never removed: one saved group per run (51 → 52
+    # after one mcp-drive run; unchanged with --no-tab-group; 185 had piled up across 13 profiles). The extension honours
+    # the flag (connectToTab: tabGroup !== false) since @playwright/mcp 0.0.85 / extension 0.5.0.
+    # CHROME_PROFILE_TAB_GROUP=1 keeps the group for a supervised session (it will then be saved when its tabs close).
+    group_flag=(--no-tab-group)
+    if [ "${CHROME_PROFILE_TAB_GROUP:-}" = "1" ]; then group_flag=(); fi
+    exec npx -y @playwright/mcp@latest --extension ${group_flag[@]+"${group_flag[@]}"} --profile-dir-name "$dir" \
       --executable-path "$(dirname "$(stable_self)")/chrome-connect-launch.sh" ;;
 
   setup)
