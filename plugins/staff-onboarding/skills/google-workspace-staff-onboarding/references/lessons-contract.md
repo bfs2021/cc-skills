@@ -9,7 +9,7 @@ The lessons log is how onboarding improves itself from the people being onboarde
 | `id`       | `L-YYYYMMDD-NN`, the day it was first recorded and a counter                                    |
 | `recorded` | `YYYY-MM-DD`                                                                                    |
 | `seen_on`  | Dates it happened, `YYYY-MM-DD` (or `YYYY-MM` when only the month is known); one per occurrence |
-| `role`     | The person's role ("QA lead", "front desk"), never their name                                   |
+| `role`     | The person's role ("sales", "support"), never their name                                        |
 | `step`     | A step id from the skill's § Steps, `conversation` or `tooling` for the rules, or `org:<slug>`  |
 | `scope`    | `generic` (true in any Google Workspace organisation) or `org`; an `org:` step is always `org`  |
 | `saw`      | What the person saw, in their terms (the exact message or page title where there was one)       |

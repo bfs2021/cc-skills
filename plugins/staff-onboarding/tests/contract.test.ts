@@ -104,5 +104,6 @@ describe("staff-onboarding contracts", () => {
 		expect(v(profileContract)).toBe("1");
 		expect(v(lessonsContract)).toBe("1");
 		expect((example.schema as number).toString()).toBe(v(profileContract));
+		expect(v(read("references/example-profile.toml"))).toBe(v(profileContract));
 	});
 });
