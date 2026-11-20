@@ -10,7 +10,7 @@ Single function/enum-driven **Bun TypeScript** CLI using **GramJS** (MTProto cli
 
 | Component      | Path                                      | Purpose                                                                                 |
 | -------------- | ----------------------------------------- | --------------------------------------------------------------------------------------- |
-| CLI Script     | `scripts/tg-cli.ts`                       | Bun TS, invoked via `bun` (deps: `bun install`)                                         |
+| CLI Script     | `scripts/tg-cli.ts`                       | Bun TS, invoked via `bun`; `telegram` is vendored in `scripts/vendor/`, no install      |
 | Session footer | `scripts/session-footer.ts`               | SSoT for the provenance footer appended to every send (tests: `session-footer.test.ts`) |
 | Cleanup        | `scripts/cleanup_deleted.ts`              | Purge deleted/ghost accounts (reuses CLI helpers)                                       |
 | Sessions       | `~/.local/share/gramjs/<profile>.session` | Per-profile GramJS StringSession (one per account)                                      |

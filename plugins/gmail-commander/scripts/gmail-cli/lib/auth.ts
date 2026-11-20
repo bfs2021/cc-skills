@@ -7,7 +7,7 @@
 
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { auth } from "@googleapis/gmail";
+import { auth } from "../vendor/googleapis-gmail.js";
 import type { OAuthCredentials, SavedToken } from "./types.ts";
 import {
   getOpUuid,
