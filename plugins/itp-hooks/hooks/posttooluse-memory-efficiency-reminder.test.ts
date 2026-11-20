@@ -137,6 +137,19 @@ describe("detectDataPathEvidenceInSourceText", () => {
   }
 });
 
+describe("evidence check stays linear (PR #104 review)", () => {
+  it("a file of blank lines up to the read cap is checked in well under a frame", () => {
+    // \s at a line start also matched newlines, which made the tensor pattern quadratic: 3.3 s on 65,536 blank lines.
+    const t0 = performance.now();
+    expect(detectDataPathEvidenceInSourceText("\n".repeat(262_144))).toBeNull();
+    expect(performance.now() - t0).toBeLessThan(50);
+  });
+  it("the tensor import is still found after blank lines and indentation", () => {
+    expect(detectDataPathEvidenceInSourceText("\n\n  import torch\n")).not.toBeNull();
+    expect(detectDataPathEvidenceInSourceText("# import torch\n")).toBeNull();
+  });
+});
+
 describe("classifier", () => {
   it("stays silent on the redirect Worker that triggered the 2026-11-15 report", async () => {
     const decision = await classify(writeFixture("redirect.js", REDIRECT_WORKER, freshSessionId()));

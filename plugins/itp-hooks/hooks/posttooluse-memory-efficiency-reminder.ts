@@ -42,11 +42,11 @@
  *      helper which uses O_CREAT|O_EXCL for race-safety.
  *
  * Why this hook is well-suited to the orchestrator path:
- *   - Once-per-session work → most invocations are sub-ms gate-claim noop
- *   - No subprocess spawn (purely static reminder text) → no timeout risk
- *   - Overlaps with ALL existing inlined classifiers via extension union
- *     (.py with ty + ssot; .ts with tsc+oxlint+biome+ssot; .rs/.go/.java/
- *     .kt/.rb with ssot) — the orchestrator's Promise.all wins
+ *   - No subprocess: one bounded read of the file's head (up to 256 KiB) and
+ *     linear-time regexes until the card fires, then a sub-ms gate check
+ *   - Its patterns use [ \t], never \s, at line starts: \s also matches
+ *     newlines, which made one pattern quadratic in runs of blank lines
+ *     (52 s on 256 KiB of them; PR #104 review)
  *
  * ─── 2026-11-15: fires on data-path code only ─────────────────────────────
  *
@@ -152,7 +152,7 @@ export const DATA_PATH_EVIDENCE_SIGNALS: ReadonlyArray<{ name: string; pattern: 
     pattern: /\b(?:memoryview|mmap|memmap2?|memcpy|ByteBuffer|bytemuck)\b|\bstruct\.(?:iter_)?unpack\b/,
   },
   { name: "manual allocation", pattern: /\b(?:malloc|calloc|realloc)\s*\(|\bstd\.mem\.Allocator\b/ },
-  { name: "tensor library", pattern: /^\s*(?:import|from)\s+(?:torch|jax|tensorflow)\b/m },
+  { name: "tensor library", pattern: /^[ \t]*(?:import|from)[ \t]+(?:torch|jax|tensorflow)\b/m },
   { name: "bulk CSV reader or writer", pattern: /\bcsv\.(?:reader|DictReader|writer|DictWriter)\b/ },
 ];
 
