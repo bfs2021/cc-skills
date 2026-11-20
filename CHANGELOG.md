@@ -1,3 +1,71 @@
+# [34.21.0](https://github.com/terrylica/cc-skills/compare/v34.20.0...v34.21.0) (2026-11-20)
+
+
+### Bug Fixes
+
+* **chrome-profiles:** stop Chrome saving a "Playwright · <client>" tab group on every run ([677fa94](https://github.com/terrylica/cc-skills/commit/677fa9493cdc1435d1898c96afac6bcce1358de8)), closes [microsoft/playwright#43038](https://github.com/microsoft/playwright/issues/43038)
+
+The Playwright Extension puts each connection's tabs in a tab group, and mcp-drive (like any run that tidies up) then closes the group's last tab. Chrome 131+ treats that as "close group" and saves the group to the bookmarks bar, synced and never removed, so every run left one saved group behind: 185 had piled up across 13 profiles. The tab sweep could not see them, because AppleScript has no notion of tab groups.
+
+- chrome-profile.sh playwright-mcp now passes --no-tab-group (supported since @playwright/mcp 0.0.85; the extension honours it via connectToTab tabGroup !== false); CHROME_PROFILE_TAB_GROUP=1 restores the group for a supervised session
+- measured on 2026-11-17 by counting saved groups in the profile's sync store before and after one run: default launcher 51 → 52, PLAYWRIGHT_MCP_NO_TAB_GROUP=1 52 → 52, fixed launcher 52 → 52, CHROME_PROFILE_TAB_GROUP=1 52 → 53
+- the empty-array expansion is safe under macOS /bin/bash 3.2 with set -u (checked)
+- SKILL.md (Tabs section) and the plugin CLAUDE.md invariant record why closing tabs is not enough and how to delete groups saved before the fix (Chrome UI only; no API, no bulk delete, never edit Sync Data)
+
+* keep the prune green (README preset link, test fixture directory) ([e049b70](https://github.com/terrylica/cc-skills/commit/e049b706a13c1fdaec5ef67be3c046bbf9450ee0)), closes [#72](https://github.com/terrylica/cc-skills/issues/72)
+
+- productivity-tools README linked the deleted presets.json; it now points at references/preset-commands.md, which SKILL.md already names as the preset SSoT, and the 'presets.json not found' row is gone.
+- test-iter111 planted its fixture in plugins/agent-reach/scripts/, which no longer exists once sync-upstream.sh is deleted (git keeps no empty directories). The test now creates the directory when missing and removes it only if it created it.
+
+* **pushover-commander:** move its packages to the plugin root ([43fdda9](https://github.com/terrylica/cc-skills/commit/43fdda947da09e84f8401a7d73e50fb171c03ed1)), closes [#91](https://github.com/terrylica/cc-skills/issues/91)
+
+@resvg/resvg-js is a native addon, which Bun's bundler cannot inline, so this plugin uses the other supported layout: package.json and bun.lock at the plugin root, where Claude Code installs them on every plugin update. Reproduced Claude Code's documented procedure (only the two files, in a separate folder, --frozen-lockfile --ignore-scripts): 31 packages installed, and the native renderer loads and renders.
+
+The renderer's missing-package hint now names the plugin root; its test asserts that path. 44 tests pass.
+
+* **tests:** make the gate tests that failed under load deterministic ([30ef817](https://github.com/terrylica/cc-skills/commit/30ef8170e20c575ab62a91cda908f80e402f0344)), closes [#83](https://github.com/terrylica/cc-skills/issues/83)
+
+#83: 3 of 4 pre-push gate runs on 2026-11-12 failed under machine load, each from a timing or toolchain assumption in a test, not a code defect.
+
+- review-round gate: the PR lookup's 2.5 s budget (kept for production) timed out on a test's local `gh` stub under load, which turned into a false deny; bun's 5 s default per test ran out on tests doing ~15 git commands. Tests now raise the hook's git/gh budgets through ITP_HOOKS_GIT_TIMEOUT_MS / ITP_HOOKS_PR_LOOKUP_TIMEOUT_MS (production never sets them), set a 60 s default, and the `--undo 999999` test uses a stub instead of the real gh. New test: a 3 s stub lookup is allowed with the test budget and denied with the default, proving the seam both ways. 54 pass.
+- compute_metrics: the hourly toolchain autoupdate can be installing uv mid-run (proto answers missing_tool). The suite waits, bounded at 120 s, and skips with the reason only for that transient answer; any other uv failure still fails. Verified with fake uv binaries: the transient case skips, the broken case fails. 3 pass with a real uv.
+- orca-closeout: a fixed 15 s deadline and a fake agent that lived a fixed N seconds raced the watcher. Waits are now poll-until with generous ceilings (no slower when passing), a lingering agent lives until afterEach ends it (its sleep is killed, so nothing is orphaned), and every exit-code assertion carries the script's stderr, so the unexplained exit 2 seen on 2026-11-12 is diagnosable next time. 59 pass in 104 s at load 14-15; no sleep processes left behind.
+
+* **tlg,gmail,gdrive:** run plugin CLIs from vendored packages ([9ce5e07](https://github.com/terrylica/cc-skills/commit/9ce5e071abb50e686c51dbd0e7769dca05f59fbf))
+
+tg-cli.ts, cleanup_deleted.ts, gmail-cli and gdrive-access now import their one third-party package from vendor/&lt;name>.js (types still come from the package via `import type`, which Bun erases). Measured from a fresh copy with no node_modules and Bun's auto-install off (--no-install): every module graph resolves, tg-cli, gmail and gdrive run, and `bun run build` compiles the gmail and gdrive binaries.
+
+Bundles: telegram 1.3 MB (31 packages), googleapis-gmail 0.6 MB (40), googleapis-drive 0.65 MB (42), against 47, 59 and 42 MB of node_modules. cleanup_deleted.ts also used big-integer directly; it is bundled with telegram, so both share one copy.
+
+Docs: the setup, health, access and triage skills no longer say to install before building, and the plugin CLAUDE.md files say where the dependency lives.
+
+
+
+### Features
+
+* **chrome-profiles:** count leftover saved Playwright tab groups ([0c6988d](https://github.com/terrylica/cc-skills/commit/0c6988dd9fd5ae60143ee700f5e0e4b4ef1ff6d4))
+
+The groups Chrome saved before --no-tab-group (previous commit) are invisible to AppleScript, so nothing reported them. A byte grep of the profile's Sync Data is no measure either: it also counts deleted groups until LevelDB compaction (53 by grep against 33 live in one profile), which made the previous commit's totals too high.
+
+- saved-tab-groups.ts reads a private copy of "&lt;profile>/Sync Data/LevelDB" with the dependency-free reader in extension-token-from-profile.ts; the newest record per key decides, so deletions count; output is counts only (no URLs); exit 0 none, 1 some remain
+- chrome-profile.sh saved-groups &lt;email>, and a doctor &lt;email> line (ok when none, warn with the count otherwise)
+- SKILL.md: corrected totals (about 100 across 10 profiles, not 185 across 13) and the two deletion routes that worked on 2026-11-17, all profiles verified at 0 afterwards: pinned groups in the background (press each chip to reopen it, then one extension connection after ~30 s idle; the extension's startup cleanup ungroups open "Playwright…" groups, which deletes them), unpinned groups through ⋮ › Tab groups › Delete group in the foreground (the keyboard works where an accessibility press on a native submenu item does not)
+- four offline tests on synthetic records: tally by client, newest record wins, a deletion is not resurrected by input order, other keys and titles ignored
+
+* **itp-hooks:** remind agents to use the lightest headless browser tier ([af5a68b](https://github.com/terrylica/cc-skills/commit/af5a68b17fdb4942de58b84aaec7b662e860be1a)), closes [#69](https://github.com/terrylica/cc-skills/issues/69)
+
+A PreToolUse reminder (soft, never denies) for Bash commands and throwaway Playwright MCP calls that start a heavy browser for work that needs no window. It points at the three agent-browser tiers: Lightpanda for public pages, chrome-headless-shell for a login or a visual check, a profile copy only when the real profile is needed. The hook is classified per real invocation through the shared shell walker, and the standalone MCP entry never prints permissionDecision "allow".
+
+Rebuilt on current main as one commit (the branch was 8 days behind and conflicted only in registry rows). Since PR #101's publishing-standard-reminder now owns the publish moment, this hook no longer fires on publishes; its one missing piece of advice (check a page's look with a chrome-headless-shell screenshot, never Lightpanda) is step 4 of the publishing-standard skill instead.
+
+- chrome-profiles browser-automation: rung 2 is agent-browser by tier
+- itp-hooks: hook, 2 entry points, spoke, CLAUDE.md row, spoke index; Bash guard count corrected to 29
+- Tests: 124 pass (this hook, the orchestrator, publishing-standard)
+
+* **scripts:** vendor plugin CLI packages so no install is needed ([806388f](https://github.com/terrylica/cc-skills/commit/806388f6aba9fd946a190275c25d9ef2edc5088b)), closes [#91](https://github.com/terrylica/cc-skills/issues/91)
+
+Claude Code installs a plugin's packages only from a package.json and lockfile at the plugin root (code.claude.com/docs/en/plugins/loading, "Node.js package dependencies"). CLIs that keep theirs in a sub-folder
+
 # [34.20.0](https://github.com/terrylica/cc-skills/compare/v34.19.2...v34.20.0) (2026-11-16)
 
 
