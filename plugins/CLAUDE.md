@@ -73,6 +73,13 @@ bun scripts/validate-plugins.mjs --fix     # Show fix instructions
 bun scripts/validate-plugins.mjs --strict  # Fail on warnings
 ```
 
+## Runtime packages
+
+Claude Code installs a plugin's npm/Bun packages on every install and update, but only from a `package.json` plus lockfile at the **plugin root** ([plugin loading reference](https://code.claude.com/docs/en/plugins/loading)). A package that lives anywhere else is never installed, so after the next update the CLI fails with "Cannot find package" (#91). Two supported layouts:
+
+- **Vendored (default for a CLI):** list the exact runtime exports in `TARGETS` in [`scripts/vendor-plugin-deps.ts`](/scripts/vendor-plugin-deps.ts), run it, and import from `./vendor/<name>.js` (types keep coming from the package via `import type`). It needs no install anywhere. `moon run repo:vendor-deps-check` keeps the bundles current.
+- **Plugin root:** for a package with a native addon (Bun cannot bundle `.node` files), put `package.json` and `bun.lock` (lockfileVersion 2 or lower, no `overrides` or `patchedDependencies`) at the plugin root, as `pushover-commander` does.
+
 ## Hooks in Plugins
 
 If your plugin includes hooks, see [Hooks Development Guide](/docs/HOOKS.md).

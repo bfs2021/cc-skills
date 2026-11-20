@@ -52,7 +52,7 @@ Use the item **UUID**, not its title — the token cache is keyed by UUID. Pass 
 The binary is built from the committed lockfile so every machine resolves the same dependency tree:
 
 ```bash
-cd "$HOME/.claude/plugins/marketplaces/cc-skills/plugins/gmail-commander/scripts/gmail-cli" && bun install --frozen-lockfile && bun run build
+cd "$HOME/.claude/plugins/marketplaces/cc-skills/plugins/gmail-commander/scripts/gmail-cli" && bun run build
 ```
 
 If `--frozen-lockfile` fails, package.json and `bun.lock` disagree. Do not delete the lockfile to get past it; report the mismatch.
@@ -69,7 +69,7 @@ The first run opens a browser for Google OAuth consent. Sign in with the account
 ## Success Criteria
 
 1. `GMAIL_OP_UUID` resolves to a 1Password item UUID (in the shell or on the command line)
-2. `scripts/gmail-cli/gmail` exists and was built with `--frozen-lockfile`
+2. `scripts/gmail-cli/gmail` exists (built with `bun run build`, which needs no install: `@googleapis/gmail` is vendored in `vendor/`)
 3. `gmail list -n 1` returns a message from the intended mailbox
 4. No `gmail-commander` launchd job exists locally (`launchctl list | grep -F gmail-commander` prints nothing)
 

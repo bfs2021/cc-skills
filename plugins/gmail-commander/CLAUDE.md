@@ -30,7 +30,7 @@ The deployment bundles this plugin's code at deploy time and ships the CLI binar
 - Importing `scripts/bot.ts` must never take the PID lock or start polling. `main()` is guarded by `import.meta.main` for exactly that reason: Telegram permits one `getUpdates` consumer per token, and a second poller makes both unreliable (the tenant pages on the resulting `409 Conflict`).
 - `scripts/lib/*` is imported through `bot.ts` (bot factory, commands, callbacks, state, audit, Gmail client, formatting, chunking, agent router, circuit breaker, triage). Keep every export behaviour-identical.
 - `scripts/lib/gmail-client.ts` shells out to the `gmail` binary. `GMAIL_CLI_BIN` points it at the shipped copy; without it the default is the marketplace path, which exists only on a workstation.
-- `scripts/gmail-cli/` is shipped as a directory. Build the binary from the committed lockfile (`bun install --frozen-lockfile && bun run build`) so every build resolves the same dependency tree.
+- `scripts/gmail-cli/` is shipped as a directory. Its one runtime package, `@googleapis/gmail`, is vendored in `vendor/googleapis-gmail.js` (built from the committed `bun.lock` by `scripts/vendor-plugin-deps.ts`, #91), so `bun cli.ts` and `bun run build` need no install.
 
 The scheduled digest does **not** use this plugin's code.
 
@@ -154,7 +154,7 @@ Gotcha the builder also absorbs: Gmail's `drafts.update` rejects with `400 Messa
 - **Hooks**: Use `$HOME`-based paths, never `$CLAUDE_PLUGIN_ROOT`
 - **Skills**: Follow Suite Pattern (Template F) with mandatory preflight
 - **CLI paths**: `$HOME/.claude/plugins/marketplaces/cc-skills/plugins/gmail-commander/scripts/gmail-cli/gmail`
-- **CLI build**: from the committed `scripts/gmail-cli/bun.lock` with `bun install --frozen-lockfile && bun run build`; the compiled binary itself is gitignored
+- **CLI build**: `bun run build` in `scripts/gmail-cli/` (no install: the dependency is vendored); the compiled binary itself is gitignored
 - **Sender alignment**: Auto-detect for replies, AskUserQuestion for new emails
 
 ## Skills

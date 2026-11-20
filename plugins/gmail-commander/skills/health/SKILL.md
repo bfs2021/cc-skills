@@ -17,7 +17,7 @@ Run diagnostics for everything this plugin owns on this machine. The Telegram bo
 PLUGIN="$HOME/.claude/plugins/marketplaces/cc-skills/plugins/gmail-commander"
 
 echo "=== 1. Gmail CLI Binary + Lockfile ==="
-ls -la "$PLUGIN/scripts/gmail-cli/gmail" 2>/dev/null && echo "OK binary" || echo "MISSING — run: cd scripts/gmail-cli && bun install --frozen-lockfile && bun run build"
+ls -la "$PLUGIN/scripts/gmail-cli/gmail" 2>/dev/null && echo "OK binary" || echo "MISSING — run: cd scripts/gmail-cli && bun run build"
 ls "$PLUGIN/scripts/gmail-cli/bun.lock" >/dev/null 2>&1 && echo "OK lockfile" || echo "MISSING lockfile — the build is not reproducible"
 
 echo ""

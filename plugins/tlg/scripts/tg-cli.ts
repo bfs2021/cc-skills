@@ -29,9 +29,9 @@ import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "no
 import { homedir } from "node:os";
 import { basename, extname, join } from "node:path";
 import process from "node:process";
-import { Api, TelegramClient } from "telegram";
-import { Logger, LogLevel } from "telegram/extensions/Logger";
-import { StringSession } from "telegram/sessions";
+import { Api, TelegramClient } from "./vendor/telegram.js";
+import { Logger, LogLevel } from "./vendor/telegram.js";
+import { StringSession } from "./vendor/telegram.js";
 import { OP_SA_TOKEN_UNCONFIGURED_HINT, resolveOpSaToken } from "./op-sa-token.ts";
 import { applyFooter } from "./session-footer.ts";
 
